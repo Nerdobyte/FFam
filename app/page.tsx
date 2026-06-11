@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Leaderboard } from '@/components/Leaderboard';
-import { TodaysMatchesSection } from '@/components/TodaysMatchesSection';
+import { UpcomingMatchesSection } from '@/components/UpcomingMatchesSection';
 import { ensureAnonymousAuth, logoutUser, rebindSession } from '@/lib/auth';
 import { subscribeMatches } from '@/lib/matches';
 import { clearStoredUserId, getStoredUserId } from '@/lib/session';
@@ -90,7 +90,7 @@ export default function HomePage() {
         </div>
 
         <div className="order-1 lg:order-2">
-          <TodaysMatchesSection matches={matches} userId={user.id} />
+          <UpcomingMatchesSection matches={matches} userId={user.id} />
         </div>
       </div>
     </div>

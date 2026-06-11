@@ -31,6 +31,7 @@ const FAMILY = [
   { name: 'Winthur', code: 'WINNY_THE_POOH' },
   { name: 'Samit', code: 'SAMIT5625' },
   { name: 'Jason', code: 'JASON2080' },
+  { name: 'Reuben', code: 'REUBEN6110' },
 ];
 
 function initDb() {

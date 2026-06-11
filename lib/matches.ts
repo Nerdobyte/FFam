@@ -18,8 +18,12 @@ interface MatchDoc {
   completed: boolean;
 }
 
+export const UPCOMING_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/** @deprecated Use UpcomingMatchesState from getUpcomingMatchesState if needed */
 export type MatchOfTheDayMode = 'upcoming' | 'completed' | 'none';
 
+/** @deprecated Use Match[] from getUpcomingMatches instead */
 export interface MatchOfTheDayState {
   match: Match | null;
   mode: MatchOfTheDayMode;
@@ -45,14 +49,29 @@ export function isSameCalendarDay(a: Date, b: Date): boolean {
   return isSameUkCalendarDay(a, b);
 }
 
-/** Non-completed matches kicking off today (UK time), soonest first. */
+/** Non-completed matches kicking off within the next 24 hours, soonest first. */
+export function getUpcomingMatches(matches: Match[], now = new Date()): Match[] {
+  const windowEnd = new Date(now.getTime() + UPCOMING_WINDOW_MS);
+  return sortMatchesByStartTime(
+    matches.filter(
+      (m) => !m.completed && m.startTime > now && m.startTime <= windowEnd,
+    ),
+  );
+}
+
+/** Upcoming matches where voting is still open (before kickoff). */
+export function getVotableUpcomingMatches(matches: Match[], now = new Date()): Match[] {
+  return getUpcomingMatches(matches, now).filter((m) => isVotingOpen(m, now));
+}
+
+/** @deprecated Use getUpcomingMatches — calendar-day filter, not a 24-hour window */
 export function getTodaysMatches(matches: Match[], now = new Date()): Match[] {
   return sortMatchesByStartTime(
     matches.filter((m) => !m.completed && isSameCalendarDay(m.startTime, now)),
   );
 }
 
-/** Matches on today's calendar where voting is still open. */
+/** @deprecated Use getVotableUpcomingMatches */
 export function getTodaysVotableMatches(matches: Match[], now = new Date()): Match[] {
   return getTodaysMatches(matches, now).filter((m) => isVotingOpen(m, now));
 }
@@ -68,9 +87,10 @@ export function getLatestCompletedMatch(matches: Match[]): Match | null {
   return completed.length > 0 ? completed[completed.length - 1] : null;
 }
 
+/** @deprecated Use getUpcomingMatches — returns only the first upcoming match wrapped in legacy shape */
 export function getMatchOfTheDay(matches: Match[], now = new Date()): MatchOfTheDayState {
-  const todays = getTodaysVotableMatches(matches, now);
-  if (todays.length > 0) return { match: todays[0], mode: 'upcoming' };
+  const upcoming = getUpcomingMatches(matches, now);
+  if (upcoming.length > 0) return { match: upcoming[0], mode: 'upcoming' };
 
   const latest = getLatestCompletedMatch(matches);
   if (latest) return { match: latest, mode: 'completed' };
@@ -108,17 +128,21 @@ export function subscribeMatches(onMatches: (matches: Match[]) => void) {
   });
 }
 
-/** @deprecated Use subscribeMatches */
+export function subscribeUpcomingMatches(onMatches: (matches: Match[]) => void) {
+  return subscribeMatches((matches) => onMatches(getUpcomingMatches(matches)));
+}
+
+/** @deprecated Use subscribeUpcomingMatches */
 export function subscribeMatchOfTheDay(onState: (state: MatchOfTheDayState) => void) {
   return subscribeMatches((matches) => onState(getMatchOfTheDay(matches)));
 }
 
-/** @deprecated Use getMatchOfTheDay */
-export function pickCurrentMatch(matches: Match[], now = new Date()): Match | null {
-  return getMatchOfTheDay(matches, now).match;
+/** @deprecated Use getUpcomingMatches */
+export function pickCurrentMatch(matches: Match[], now = new Date()): Match[] {
+  return getUpcomingMatches(matches, now);
 }
 
-/** @deprecated Use subscribeMatches */
-export function subscribeCurrentMatch(onMatch: (match: Match | null) => void) {
-  return subscribeMatchOfTheDay((state) => onMatch(state.match));
+/** @deprecated Use subscribeUpcomingMatches */
+export function subscribeCurrentMatch(onMatches: (matches: Match[]) => void) {
+  return subscribeUpcomingMatches(onMatches);
 }
