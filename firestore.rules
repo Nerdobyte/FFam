@@ -1,0 +1,64 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVoteOwner(userId) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(userId)).data.authUid == request.auth.uid;
+    }
+
+    function voteDocId(matchId, userId) {
+      return matchId + '_' + userId;
+    }
+
+    function matchIsOpenForVoting(matchId) {
+      let match = get(/databases/$(database)/documents/matches/$(matchId)).data;
+      return match.completed == false && match.startTime > request.time;
+    }
+
+    function validVoteData() {
+      return request.resource.data.keys().hasAll(['matchId', 'userId', 'prediction', 'createdAt'])
+        && request.resource.data.prediction in ['teamA', 'teamB'];
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if false;
+      allow update: if isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['authUid'])
+        && (
+          request.resource.data.authUid == request.auth.uid
+          || (request.resource.data.authUid == null && resource.data.authUid == request.auth.uid)
+        );
+    }
+
+    match /matches/{matchId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /votes/{voteId} {
+      allow read: if isSignedIn() && isVoteOwner(resource.data.userId);
+
+      allow create: if isVoteOwner(request.resource.data.userId)
+        && voteId == voteDocId(request.resource.data.matchId, request.resource.data.userId)
+        && validVoteData()
+        && matchIsOpenForVoting(request.resource.data.matchId)
+        && !exists(/databases/$(database)/documents/votes/$(voteId));
+
+      allow update: if isVoteOwner(resource.data.userId)
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.matchId == resource.data.matchId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['prediction', 'updatedAt'])
+        && request.resource.data.prediction in ['teamA', 'teamB']
+        && matchIsOpenForVoting(resource.data.matchId);
+
+      allow delete: if false;
+    }
+  }
+}

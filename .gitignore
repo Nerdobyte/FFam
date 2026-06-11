@@ -1,0 +1,11 @@
+node_modules
+.next
+dist
+.env
+.env.local
+secrets/
+secret/
+*serviceAccount*.json
+.firebase
+*.log
+.DS_Store
