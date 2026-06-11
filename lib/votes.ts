@@ -8,7 +8,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Prediction } from './types';
+import type { Prediction, VoteTotals } from './types';
 
 interface VoteDoc {
   matchId: string;
@@ -65,7 +65,7 @@ export function subscribeUserPrediction(
 export async function fetchCommunityTotals(
   matchId: string,
   userId: string,
-): Promise<{ teamA: number; teamB: number } | null> {
+): Promise<VoteTotals | null> {
   const { auth } = await import('./firebase');
   const user = auth.currentUser;
   if (!user) return null;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { toUkDatetimeLocal, ukDatetimeLocalToIso } from '@/lib/datetime';
+import type { Prediction } from '@/lib/types';
 
 interface AdminMatch {
   id: string;
@@ -11,8 +12,8 @@ interface AdminMatch {
   endTime: string;
   completed: boolean;
   scored: boolean;
-  result: 'teamA' | 'teamB' | null;
-  totals: { teamA: number; teamB: number };
+  result: Prediction | null;
+  totals: { teamA: number; teamB: number; draw: number };
 }
 
 export default function AdminPage() {
@@ -133,7 +134,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleSetWinner = async (winner: 'teamA' | 'teamB') => {
+  const handleSetResult = async (result: Prediction) => {
     if (!matchId) return;
     setLoading(true);
     setMessage('');
@@ -141,12 +142,12 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/set-winner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId, winner }),
+        body: JSON.stringify({ matchId, winner: result }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setMessage(
-        `Winner set! ${data.pointsAwarded} of ${data.voters} voter(s) awarded a point. Leaderboard updated.`,
+        `Result set! ${data.pointsAwarded} point(s) awarded across ${data.voters} voter(s). Leaderboard updated.`,
       );
       await loadMatches();
     } catch (err) {
@@ -221,7 +222,7 @@ export default function AdminPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Admin Panel</h1>
-          <p className="mt-2 text-white/60">Manage matches and declare winners.</p>
+          <p className="mt-2 text-white/60">Manage matches and declare results.</p>
         </div>
         <button
           type="button"
@@ -313,15 +314,15 @@ export default function AdminPage() {
               </p>
               <p className="mt-1 break-all font-mono text-xs text-white/40">ID: {selected.id}</p>
               <p className="mt-2">
-                {selected.teamA}: {selected.totals.teamA} votes · {selected.teamB}:{' '}
-                {selected.totals.teamB} votes
+                {selected.teamA}: {selected.totals.teamA} votes · Draw:{' '}
+                {selected.totals.draw} votes · {selected.teamB}: {selected.totals.teamB} votes
               </p>
               <p className="mt-1">
                 {selected.completed ? 'Completed' : 'Active'}
                 {selected.scored ? ' · Marked scored' : ''}
               </p>
               {selected.scored &&
-                selected.totals.teamA + selected.totals.teamB > 0 && (
+                selected.totals.teamA + selected.totals.teamB + selected.totals.draw > 0 && (
                   <p className="mt-2 text-amber-300">
                     Votes exist but leaderboard empty? Click &quot;Re-apply scoring&quot; below.
                   </p>
@@ -349,11 +350,11 @@ export default function AdminPage() {
               </form>
             )}
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
               <button
                 type="button"
                 disabled={loading || selected.scored}
-                onClick={() => handleSetWinner('teamA')}
+                onClick={() => handleSetResult('teamA')}
                 className="rounded-xl bg-emerald-600 py-3 font-semibold transition hover:bg-emerald-500 disabled:opacity-50"
               >
                 Set {selected.teamA} winner
@@ -361,7 +362,15 @@ export default function AdminPage() {
               <button
                 type="button"
                 disabled={loading || selected.scored}
-                onClick={() => handleSetWinner('teamB')}
+                onClick={() => handleSetResult('draw')}
+                className="rounded-xl bg-emerald-600 py-3 font-semibold transition hover:bg-emerald-500 disabled:opacity-50"
+              >
+                Set Draw
+              </button>
+              <button
+                type="button"
+                disabled={loading || selected.scored}
+                onClick={() => handleSetResult('teamB')}
                 className="rounded-xl bg-emerald-600 py-3 font-semibold transition hover:bg-emerald-500 disabled:opacity-50"
               >
                 Set {selected.teamB} winner

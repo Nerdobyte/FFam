@@ -33,7 +33,7 @@ export function CommunityVotes({ match, totals, hasVoted, loading }: CommunityVo
     );
   }
 
-  const total = totals.teamA + totals.teamB;
+  const total = totals.teamA + totals.teamB + totals.draw;
   const pct = votePercentages(totals);
 
   return (
@@ -43,6 +43,7 @@ export function CommunityVotes({ match, totals, hasVoted, loading }: CommunityVo
 
       <div className="mt-5 space-y-5">
         <PercentBar label={match.teamA} percent={pct.teamA} count={totals.teamA} />
+        <PercentBar label="Draw" percent={pct.draw} count={totals.draw} />
         <PercentBar label={match.teamB} percent={pct.teamB} count={totals.teamB} />
       </div>
 

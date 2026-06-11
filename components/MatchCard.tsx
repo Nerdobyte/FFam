@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Match, MatchStatus, Prediction } from '@/lib/types';
-import { MATCH_STATUS_LABELS, getMatchStatus } from '@/lib/types';
+import { MATCH_STATUS_LABELS, formatMatchResult, getMatchStatus } from '@/lib/types';
 import { formatUkDateTime, formatUkTime } from '@/lib/datetime';
 import { getCountdown, isVotingOpen } from '@/lib/matches';
 
@@ -43,6 +43,9 @@ export function MatchCard({
     ? formatUkTime(match.startTime)
     : formatUkDateTime(match.startTime);
 
+  const resultLabel = formatMatchResult(match);
+  const resultHeading = match.result === 'draw' ? 'Result' : 'Winner';
+
   return (
     <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-md">
       <div className="border-b border-white/10 bg-black/20 px-6 py-4 text-center">
@@ -65,7 +68,7 @@ export function MatchCard({
         </div>
       </div>
 
-      <div className="grid gap-4 px-6 py-8 md:grid-cols-[1fr_auto_1fr] md:items-center">
+      <div className="grid gap-4 px-6 py-8 md:grid-cols-3 md:items-center">
         <VoteButton
           team={match.teamA}
           selected={userPrediction === 'teamA'}
@@ -73,12 +76,11 @@ export function MatchCard({
           onClick={() => onVote('teamA')}
         />
 
-        <div className="text-center">
-          <p className="text-4xl font-black text-white/30">VS</p>
-          {status === 'voting-open' && (
-            <p className="mt-3 font-mono text-sm font-medium text-gold-400">{countdown}</p>
-          )}
-        </div>
+        <DrawButton
+          selected={userPrediction === 'draw'}
+          disabled={!votingOpen || voting}
+          onClick={() => onVote('draw')}
+        />
 
         <VoteButton
           team={match.teamB}
@@ -88,9 +90,15 @@ export function MatchCard({
         />
       </div>
 
+      {status === 'voting-open' && (
+        <p className="border-t border-white/10 px-6 py-3 text-center font-mono text-sm font-medium text-gold-400">
+          {countdown}
+        </p>
+      )}
+
       {status === 'result-declared' && match.result && (
         <div className="border-t border-white/10 bg-gold-500/10 px-6 py-4 text-center text-sm text-gold-400">
-          Winner: <strong>{match.result === 'teamA' ? match.teamA : match.teamB}</strong>
+          {resultHeading}: <strong>{resultLabel}</strong>
         </div>
       )}
     </section>
@@ -123,6 +131,39 @@ function VoteButton({
       {!disabled && (
         <p className="mt-3 text-sm font-medium text-gold-400">
           {selected ? 'Tap to change' : 'Pick to win'}
+        </p>
+      )}
+      {disabled && selected && (
+        <p className="mt-3 text-sm font-semibold text-gold-400">Your pick</p>
+      )}
+    </button>
+  );
+}
+
+function DrawButton({
+  selected,
+  disabled,
+  onClick,
+}: {
+  selected: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-2xl border p-6 text-center transition ${
+        selected
+          ? 'border-gold-400 bg-gold-400/10 shadow-lg shadow-gold-400/10'
+          : 'border-white/10 bg-black/20 hover:border-white/30 hover:bg-black/30'
+      } ${disabled && !selected ? 'cursor-not-allowed opacity-70' : ''}`}
+    >
+      <p className="text-xl font-bold text-white md:text-2xl">Draw</p>
+      {!disabled && (
+        <p className="mt-3 text-sm font-medium text-gold-400">
+          {selected ? 'Tap to change' : 'Pick a draw'}
         </p>
       )}
       {disabled && selected && (

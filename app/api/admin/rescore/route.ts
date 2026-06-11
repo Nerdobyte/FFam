@@ -17,13 +17,20 @@ export async function POST(request: Request) {
   try {
     const result = await repairSettleMatch(matchId);
 
+    const winnerLabel =
+      result.result === 'draw'
+        ? 'Draw'
+        : result.result === 'teamA'
+          ? result.teamA
+          : result.teamB;
+
     return NextResponse.json({
       ok: true,
       repaired: true,
       pointsAwarded: result.pointsAwarded,
       voters: result.voters,
       voterIds: result.voterIds,
-      winner: result.result === 'teamA' ? result.teamA : result.teamB,
+      winner: winnerLabel,
     });
   } catch (err) {
     if (err instanceof SettleMatchError) {

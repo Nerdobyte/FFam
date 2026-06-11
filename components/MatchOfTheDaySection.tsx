@@ -5,6 +5,7 @@ import { MatchCard } from '@/components/MatchCard';
 import { MyPick } from '@/components/MyPick';
 import type { MatchOfTheDayMode } from '@/lib/matches';
 import type { Match, Prediction, VoteTotals } from '@/lib/types';
+import { formatMatchResult } from '@/lib/types';
 
 interface MatchOfTheDaySectionProps {
   match: Match | null;
@@ -59,10 +60,8 @@ export function MatchOfTheDaySection({
           {mode !== 'upcoming' && match.completed && match.result && (
             <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-center text-sm text-white/70">
               Final:{' '}
-              <strong className="text-white">
-                {match.result === 'teamA' ? match.teamA : match.teamB}
-              </strong>{' '}
-              won
+              <strong className="text-white">{formatMatchResult(match)}</strong>
+              {match.result === 'draw' ? '' : ' won'}
             </div>
           )}
         </>

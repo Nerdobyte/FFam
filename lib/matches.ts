@@ -7,14 +7,14 @@ import {
 } from 'firebase/firestore';
 import { formatUkTime, isSameUkCalendarDay } from './datetime';
 import { db } from './firebase';
-import type { Match } from './types';
+import type { Match, Prediction } from './types';
 
 interface MatchDoc {
   teamA: string;
   teamB: string;
   startTime: Timestamp;
   endTime: Timestamp;
-  result: 'teamA' | 'teamB' | null;
+  result: Prediction | null;
   completed: boolean;
 }
 

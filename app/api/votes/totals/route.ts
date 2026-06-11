@@ -22,12 +22,14 @@ export async function POST(request: Request) {
 
     let teamA = 0;
     let teamB = 0;
+    let draw = 0;
 
     votesSnap.forEach((doc) => {
       const data = doc.data();
 
       if (data?.prediction === 'teamA') teamA++;
       if (data?.prediction === 'teamB') teamB++;
+      if (data?.prediction === 'draw') draw++;
     });
 
     // IMPORTANT: match frontend expected shape
@@ -35,6 +37,7 @@ export async function POST(request: Request) {
       totals: {
         teamA,
         teamB,
+        draw,
       },
     });
   } catch (error) {
@@ -45,6 +48,7 @@ export async function POST(request: Request) {
         totals: {
           teamA: 0,
           teamB: 0,
+          draw: 0,
         },
       },
       { status: 200 }

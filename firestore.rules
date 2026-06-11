@@ -22,7 +22,7 @@ service cloud.firestore {
 
     function validVoteData() {
       return request.resource.data.keys().hasAll(['matchId', 'userId', 'prediction', 'createdAt'])
-        && request.resource.data.prediction in ['teamA', 'teamB'];
+        && request.resource.data.prediction in ['teamA', 'teamB', 'draw'];
     }
 
     match /users/{userId} {
@@ -55,7 +55,7 @@ service cloud.firestore {
         && request.resource.data.matchId == resource.data.matchId
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['prediction', 'updatedAt'])
-        && request.resource.data.prediction in ['teamA', 'teamB']
+        && request.resource.data.prediction in ['teamA', 'teamB', 'draw']
         && matchIsOpenForVoting(resource.data.matchId);
 
       allow delete: if false;

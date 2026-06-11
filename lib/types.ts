@@ -22,7 +22,7 @@ export interface Match {
   completed: boolean;
 }
 
-export type Prediction = 'teamA' | 'teamB';
+export type Prediction = 'teamA' | 'teamB' | 'draw';
 
 export type MatchStatus = 'voting-open' | 'voting-closed' | 'result-declared';
 
@@ -37,6 +37,24 @@ export interface Vote {
 export interface VoteTotals {
   teamA: number;
   teamB: number;
+  draw: number;
+}
+
+export function scorePoints(prediction: Prediction, result: Prediction): number {
+  if (prediction === 'draw' && result === 'draw') return 1;
+  if (prediction === result) return 3;
+  return 0;
+}
+
+export function formatPrediction(match: Match, prediction: Prediction): string {
+  if (prediction === 'draw') return 'Draw';
+  return prediction === 'teamA' ? match.teamA : match.teamB;
+}
+
+export function formatMatchResult(match: Match): string {
+  if (!match.result) return '';
+  if (match.result === 'draw') return 'Draw';
+  return match.result === 'teamA' ? match.teamA : match.teamB;
 }
 
 export function sortLeaderboard(users: User[]): User[] {
@@ -61,11 +79,14 @@ export function getMatchStatus(match: Match, now = new Date()): MatchStatus {
   return 'voting-open';
 }
 
-export function votePercentages(totals: VoteTotals): { teamA: number; teamB: number } {
-  const total = totals.teamA + totals.teamB;
-  if (total === 0) return { teamA: 50, teamB: 50 };
+export function votePercentages(
+  totals: VoteTotals,
+): { teamA: number; teamB: number; draw: number } {
+  const total = totals.teamA + totals.teamB + totals.draw;
+  if (total === 0) return { teamA: 33, teamB: 33, draw: 34 };
   const teamA = Math.round((totals.teamA / total) * 100);
-  return { teamA, teamB: 100 - teamA };
+  const teamB = Math.round((totals.teamB / total) * 100);
+  return { teamA, teamB, draw: 100 - teamA - teamB };
 }
 
 export const MATCH_STATUS_LABELS: Record<MatchStatus, string> = {

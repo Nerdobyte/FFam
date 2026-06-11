@@ -23,6 +23,12 @@ function readPrediction(data) {
   return data.prediction ?? data.choice ?? null;
 }
 
+function scorePoints(prediction, result) {
+  if (prediction === 'draw' && result === 'draw') return 1;
+  if (prediction === result) return 3;
+  return 0;
+}
+
 async function main() {
   const matchId = process.argv[2];
   if (!matchId) {
@@ -66,20 +72,20 @@ async function main() {
   for (const voteDoc of voteDocs) {
     const { userId } = voteDoc.data();
     const prediction = readPrediction(voteDoc.data());
-    const isCorrect = prediction === result;
-    if (isCorrect) pointsAwarded++;
+    const points = scorePoints(prediction, result);
+    if (points > 0) pointsAwarded += points;
 
     const updates = { totalPredictions: FieldValue.increment(1) };
-    if (isCorrect) {
+    if (points > 0) {
       updates.correctPredictions = FieldValue.increment(1);
-      updates.points = FieldValue.increment(1);
+      updates.points = FieldValue.increment(points);
     }
     await db.collection('users').doc(userId).set(updates, { merge: true });
-    console.log(`  ${userId}: ${prediction} ${isCorrect ? '✓ +1' : '✗'}`);
+    console.log(`  ${userId}: ${prediction} ${points > 0 ? `✓ +${points}` : '✗'}`);
   }
 
   await matchRef.update({ scored: true, completed: true, result });
-  console.log(`\nDone. ${pointsAwarded}/${voteDocs.length} awarded a point.`);
+  console.log(`\nDone. ${pointsAwarded} total point(s) awarded across ${voteDocs.length} voter(s).`);
 }
 
 main().catch((e) => {

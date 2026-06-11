@@ -26,13 +26,14 @@ export async function verifyFamilyUser(
 
 export function aggregateVoteTotals(
   votes: { prediction: string }[],
-): { teamA: number; teamB: number } {
+): { teamA: number; teamB: number; draw: number } {
   return votes.reduce(
     (acc, vote) => {
       if (vote.prediction === 'teamA') acc.teamA += 1;
       else if (vote.prediction === 'teamB') acc.teamB += 1;
+      else if (vote.prediction === 'draw') acc.draw += 1;
       return acc;
     },
-    { teamA: 0, teamB: 0 },
+    { teamA: 0, teamB: 0, draw: 0 },
   );
 }

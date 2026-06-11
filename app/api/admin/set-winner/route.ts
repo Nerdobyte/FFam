@@ -9,19 +9,26 @@ export async function POST(request: Request) {
 
   const { matchId, winner } = await request.json();
 
-  if (!matchId || (winner !== 'teamA' && winner !== 'teamB')) {
+  if (!matchId || (winner !== 'teamA' && winner !== 'teamB' && winner !== 'draw')) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 
   try {
     const result = await settleMatch(matchId, winner);
 
+    const winnerLabel =
+      result.result === 'draw'
+        ? 'Draw'
+        : result.result === 'teamA'
+          ? result.teamA
+          : result.teamB;
+
     return NextResponse.json({
       ok: true,
       pointsAwarded: result.pointsAwarded,
       voters: result.voters,
       voterIds: result.voterIds,
-      winner: result.result === 'teamA' ? result.teamA : result.teamB,
+      winner: winnerLabel,
     });
   } catch (err) {
     if (err instanceof SettleMatchError) {

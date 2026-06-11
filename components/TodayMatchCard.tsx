@@ -11,6 +11,7 @@ import {
   subscribeUserPrediction,
 } from '@/lib/votes';
 import type { Match, Prediction, VoteTotals } from '@/lib/types';
+import { formatPrediction } from '@/lib/types';
 
 interface TodayMatchCardProps {
   match: Match;
@@ -98,7 +99,7 @@ export function TodayMatchCard({ match, userId, compactHeader }: TodayMatchCardP
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center text-sm text-white/70">
           You picked{' '}
           <strong className="text-white">
-            {prediction === 'teamA' ? match.teamA : match.teamB}
+            {formatPrediction(match, prediction)}
           </strong>{' '}
           — voting closed at kickoff
         </div>

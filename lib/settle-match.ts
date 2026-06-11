@@ -1,6 +1,7 @@
 import { FieldValue, Firestore } from 'firebase-admin/firestore';
 import { getAdminDb } from './firebase-admin';
 import type { Prediction } from './types';
+import { scorePoints } from './types';
 
 export class SettleMatchError extends Error {
   constructor(
@@ -24,7 +25,7 @@ export interface SettleMatchResult {
 
 function readPrediction(data: Record<string, unknown>): Prediction | null {
   const value = data.prediction ?? data.choice;
-  if (value === 'teamA' || value === 'teamB') return value;
+  if (value === 'teamA' || value === 'teamB' || value === 'draw') return value;
   return null;
 }
 
@@ -72,7 +73,7 @@ export async function settleMatch(
     }
 
     const result: Prediction | null = winner ?? match.result ?? null;
-    if (!result || (result !== 'teamA' && result !== 'teamB')) {
+    if (!result || (result !== 'teamA' && result !== 'teamB' && result !== 'draw')) {
       throw new SettleMatchError('Match has no result to score against', 'NO_RESULT');
     }
 
@@ -91,17 +92,17 @@ export async function settleMatch(
       if (!userId || !prediction) return;
 
       voterIds.push(userId);
-      const isCorrect = prediction === result;
-      if (isCorrect) pointsAwarded += 1;
+      const points = scorePoints(prediction, result);
+      if (points > 0) pointsAwarded += points;
 
       const userRef = db.collection('users').doc(userId);
       const userUpdates: Record<string, ReturnType<typeof FieldValue.increment>> = {
         totalPredictions: FieldValue.increment(1),
       };
 
-      if (isCorrect) {
+      if (points > 0) {
         userUpdates.correctPredictions = FieldValue.increment(1);
-        userUpdates.points = FieldValue.increment(1);
+        userUpdates.points = FieldValue.increment(points);
       }
 
       tx.set(userRef, userUpdates, { merge: true });
@@ -139,7 +140,10 @@ export async function repairSettleMatch(matchId: string): Promise<SettleMatchRes
   }
 
   const match = matchSnap.data()!;
-  if (!match.result || (match.result !== 'teamA' && match.result !== 'teamB')) {
+  if (
+    !match.result ||
+    (match.result !== 'teamA' && match.result !== 'teamB' && match.result !== 'draw')
+  ) {
     throw new SettleMatchError('Match has no result to score against', 'NO_RESULT');
   }
 
