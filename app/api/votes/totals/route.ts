@@ -26,29 +26,28 @@ export async function POST(request: Request) {
     votesSnap.forEach((doc) => {
       const data = doc.data();
 
-      if (data?.prediction === 'teamA') {
-        teamA++;
-      }
-
-      if (data?.prediction === 'teamB') {
-        teamB++;
-      }
+      if (data?.prediction === 'teamA') teamA++;
+      if (data?.prediction === 'teamB') teamB++;
     });
 
+    // IMPORTANT: match frontend expected shape
     return NextResponse.json({
-      teamA,
-      teamB,
+      totals: {
+        teamA,
+        teamB,
+      },
     });
   } catch (error) {
     console.error('Error in /api/votes/totals:', error);
 
     return NextResponse.json(
       {
-        error: 'Failed to compute vote totals',
-        teamA: 0,
-        teamB: 0,
+        totals: {
+          teamA: 0,
+          teamB: 0,
+        },
       },
-      { status: 200 } // important: never break UI
+      { status: 200 }
     );
   }
 }
