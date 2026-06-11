@@ -8,11 +8,29 @@ import { readFileSync } from 'fs';
 import { formatUkDateTime, ukKickoff } from './datetime.mjs';
 
 const FAMILY = [
-  { name: 'Mom', code: 'MOM2026' },
-  { name: 'Dad', code: 'DAD2026' },
-  { name: 'Alex', code: 'ALEX2026' },
-  { name: 'Sam', code: 'SAM2026' },
-  { name: 'Ben', code: 'BEN2026' },
+  { name: 'James', code: 'JAMES1233' },
+  { name: 'Wanda', code: 'WANDA7932' },
+  { name: 'Eric', code: 'ERIC2739' },
+  { name: 'Lucy', code: 'LUCY9723' },
+  { name: 'Alice', code: 'ALICE1283' },
+  { name: 'Bonnie', code: 'BONNIE2389' },
+  { name: 'Sean', code: 'SEAN4593' },
+  { name: 'Suhail', code: 'SUHAIL2323' },
+  { name: 'Troy', code: 'TROY6542' },
+  { name: 'Bella', code: 'BELLA0981' },
+  { name: 'Nellie', code: 'NELLIE3392' },
+  { name: 'Sherry', code: 'SHERRY9081' },
+  { name: 'Nadia', code: 'NADIA0547' },
+  { name: 'Rainer', code: 'RAINER_THE_PHYSICIST' },
+  { name: 'Ben', code: 'BEN_BIGGUS_DICKUS' },
+  { name: 'Ozie', code: 'WIZ_OF_OZ' },
+  { name: 'Rufina', code: 'RUFINA6521' },
+  { name: 'Tina', code: 'BEST_GODMUM_T' },
+  { name: 'Bryan', code: 'BRYAN5901' },
+  { name: 'Gabriel', code: 'GABRIEL8665' },
+  { name: 'Winthur', code: 'WINNY_THE_POOH' },
+  { name: 'Samit', code: 'SAMIT5625' },
+  { name: 'Jason', code: 'JASON2080' },
 ];
 
 function initDb() {
