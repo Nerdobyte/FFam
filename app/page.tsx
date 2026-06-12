@@ -84,7 +84,7 @@ export default function HomePage() {
         </button>
       </header>
 
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(340px,380px)_minmax(0,1fr)]">
         <div className="order-2 lg:order-1">
           <Leaderboard users={leaderboard} currentUserId={user.id} />
         </div>

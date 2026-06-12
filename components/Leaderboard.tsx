@@ -2,7 +2,7 @@
 
 import type { User } from '@/lib/types';
 import { accuracyPercent } from '@/lib/types';
-import { getPlayerNationalities } from '@/lib/player-nationalities';
+import { getPlayerNationalityInfo, formatCountryWithRank } from '@/lib/player-nationalities';
 
 interface LeaderboardProps {
   users: User[];
@@ -23,7 +23,7 @@ export function Leaderboard({ users, currentUserId }: LeaderboardProps) {
         <ol className="mt-4 space-y-2">
           {users.map((user, index) => {
             const accuracy = accuracyPercent(user.correctPredictions, user.totalPredictions);
-            const nationalities = getPlayerNationalities(user.name);
+            const nationalityInfo = getPlayerNationalityInfo(user.name);
             return (
               <li
                 key={user.id}
@@ -33,7 +33,7 @@ export function Leaderboard({ users, currentUserId }: LeaderboardProps) {
                     : 'border-white/10 bg-black/20'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <span
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                       index === 0
@@ -49,24 +49,31 @@ export function Leaderboard({ users, currentUserId }: LeaderboardProps) {
                   </span>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-white">
+                    <p className="text-sm font-semibold text-white">
                       {user.name}
                       {user.id === currentUserId && (
                         <span className="ml-1 text-xs font-normal text-gold-400">(you)</span>
                       )}
                     </p>
-                    {nationalities && (
-                      <p className="text-xs leading-tight text-white/40">
-                        <span className="block truncate">{nationalities[0]}/</span>
-                        <span className="block truncate">{nationalities[1]}</span>
-                      </p>
+                    {nationalityInfo && (
+                      <div className="mt-0.5 text-xs leading-snug text-white/40">
+                        <span className="block break-words">
+                          {formatCountryWithRank(nationalityInfo.countries[0])} /
+                        </span>
+                        <span className="block break-words">
+                          {formatCountryWithRank(nationalityInfo.countries[1])}
+                        </span>
+                        <p className="mt-0.5 text-[11px] text-white/30">
+                          Avg Rank: {nationalityInfo.averageRank.toFixed(1)}
+                        </p>
+                      </div>
                     )}
                     <p className="text-xs text-white/50">
                       {user.correctPredictions}/{user.totalPredictions} ({accuracy}%)
                     </p>
                   </div>
 
-                  <span className="shrink-0 text-sm font-bold text-white">
+                  <span className="shrink-0 pt-0.5 text-sm font-bold text-white">
                     {user.points} <span className="text-xs font-normal text-white/40">pts</span>
                   </span>
                 </div>
