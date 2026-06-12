@@ -16,6 +16,24 @@ interface AdminMatch {
   totals: { teamA: number; teamB: number; draw: number };
 }
 
+interface LeaderboardAuditEntry {
+  userId: string;
+  name: string;
+  stored: { points: number; correctPredictions: number; totalPredictions: number };
+  expected: { points: number; correctPredictions: number; totalPredictions: number };
+  matches: boolean;
+}
+
+interface LeaderboardAuditReport {
+  allMatch: boolean;
+  scoredMatchCount: number;
+  voteCountOnScoredMatches: number;
+  mismatches: LeaderboardAuditEntry[];
+  entries: LeaderboardAuditEntry[];
+  repairedCount?: number;
+  repairedUserIds?: string[];
+}
+
 export default function AdminPage() {
   const [authorized, setAuthorized] = useState(false);
   const [secret, setSecret] = useState('');
@@ -26,6 +44,8 @@ export default function AdminPage() {
 
   const [newMatch, setNewMatch] = useState({ teamA: '', teamB: '', startTime: '', endTime: '' });
   const [editKickoff, setEditKickoff] = useState('');
+  const [auditReport, setAuditReport] = useState<LeaderboardAuditReport | null>(null);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   const loadMatches = async () => {
     const res = await fetch('/api/admin/matches');
@@ -184,6 +204,52 @@ export default function AdminPage() {
     await fetch('/api/admin/logout', { method: 'POST' });
     setAuthorized(false);
     setMatches([]);
+  };
+
+  const handleLeaderboardAudit = async () => {
+    setAuditLoading(true);
+    setMessage('');
+    try {
+      const res = await fetch('/api/admin/leaderboard-audit', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Audit failed');
+      setAuditReport(data);
+      if (data.allMatch) {
+        setMessage(
+          `Leaderboard check passed — all ${data.entries.length} player(s) match their votes across ${data.scoredMatchCount} scored match(es).`,
+        );
+      } else {
+        setMessage(
+          `Leaderboard mismatch — ${data.mismatches.length} player(s) have incorrect stats. Review below and click "Fix leaderboard" to update.`,
+        );
+      }
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Audit failed');
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
+  const handleLeaderboardReconcile = async () => {
+    setAuditLoading(true);
+    setMessage('');
+    try {
+      const res = await fetch('/api/admin/leaderboard-reconcile', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Reconcile failed');
+      setAuditReport(data);
+      if (data.repairedCount === 0) {
+        setMessage('Leaderboard already correct — no updates needed.');
+      } else {
+        setMessage(
+          `Leaderboard updated for ${data.repairedCount} player(s): ${(data.repairedUserIds ?? []).join(', ')}.`,
+        );
+      }
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Reconcile failed');
+    } finally {
+      setAuditLoading(false);
+    }
   };
 
   const selected = matches.find((m) => m.id === matchId);
@@ -388,6 +454,78 @@ export default function AdminPage() {
               </button>
             )}
           </>
+        )}
+      </section>
+
+      <section className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
+        <h2 className="text-lg font-semibold">Leaderboard integrity</h2>
+        <p className="text-sm text-white/60">
+          Compare each player&apos;s stored points and win counts against their votes on all scored
+          matches. Use this after re-applying scoring or if totals look wrong.
+        </p>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            disabled={auditLoading}
+            onClick={handleLeaderboardAudit}
+            className="rounded-xl border border-white/20 py-3 font-semibold hover:bg-white/5 disabled:opacity-50"
+          >
+            {auditLoading ? 'Checking…' : 'Check leaderboard'}
+          </button>
+          <button
+            type="button"
+            disabled={auditLoading}
+            onClick={handleLeaderboardReconcile}
+            className="rounded-xl border border-amber-500/40 bg-amber-500/10 py-3 font-semibold text-amber-200 hover:bg-amber-500/20 disabled:opacity-50"
+          >
+            {auditLoading ? 'Updating…' : 'Fix leaderboard'}
+          </button>
+        </div>
+
+        {auditReport && (
+          <div className="space-y-3 rounded-xl bg-black/20 p-4 text-sm">
+            <p className="text-white/70">
+              {auditReport.scoredMatchCount} scored match(es) ·{' '}
+              {auditReport.voteCountOnScoredMatches} vote(s) counted ·{' '}
+              {auditReport.allMatch ? (
+                <span className="text-emerald-300">All players match</span>
+              ) : (
+                <span className="text-amber-300">
+                  {auditReport.mismatches.length} mismatch(es)
+                </span>
+              )}
+            </p>
+
+            {auditReport.mismatches.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px] text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-white/50">
+                      <th className="py-2 pr-3 font-medium">Player</th>
+                      <th className="py-2 pr-3 font-medium">Stored</th>
+                      <th className="py-2 font-medium">Expected</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditReport.mismatches.map((entry) => (
+                      <tr key={entry.userId} className="border-b border-white/5">
+                        <td className="py-2 pr-3 font-medium text-white">{entry.name}</td>
+                        <td className="py-2 pr-3 text-white/60">
+                          {entry.stored.points} pts · {entry.stored.correctPredictions}/
+                          {entry.stored.totalPredictions} wins
+                        </td>
+                        <td className="py-2 text-emerald-300">
+                          {entry.expected.points} pts · {entry.expected.correctPredictions}/
+                          {entry.expected.totalPredictions} wins
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
       </section>
     </div>

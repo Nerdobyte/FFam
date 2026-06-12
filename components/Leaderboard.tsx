@@ -2,6 +2,7 @@
 
 import type { User } from '@/lib/types';
 import { accuracyPercent } from '@/lib/types';
+import { getPlayerNationalities } from '@/lib/player-nationalities';
 
 interface LeaderboardProps {
   users: User[];
@@ -22,6 +23,7 @@ export function Leaderboard({ users, currentUserId }: LeaderboardProps) {
         <ol className="mt-4 space-y-2">
           {users.map((user, index) => {
             const accuracy = accuracyPercent(user.correctPredictions, user.totalPredictions);
+            const nationalities = getPlayerNationalities(user.name);
             return (
               <li
                 key={user.id}
@@ -53,6 +55,12 @@ export function Leaderboard({ users, currentUserId }: LeaderboardProps) {
                         <span className="ml-1 text-xs font-normal text-gold-400">(you)</span>
                       )}
                     </p>
+                    {nationalities && (
+                      <p className="text-xs leading-tight text-white/40">
+                        <span className="block truncate">{nationalities[0]}/</span>
+                        <span className="block truncate">{nationalities[1]}</span>
+                      </p>
+                    )}
                     <p className="text-xs text-white/50">
                       {user.correctPredictions}/{user.totalPredictions} ({accuracy}%)
                     </p>
