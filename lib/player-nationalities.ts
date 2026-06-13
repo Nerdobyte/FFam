@@ -66,15 +66,15 @@ const PLAYER_NATIONALITIES: Record<string, [CountryWithRank, CountryWithRank]> =
     { name: 'Argentina', rank: 1 },
     { name: 'Bosnia and Herzegovina', rank: 63 },
   ],
-  Wanda: [
+  Reuben: [
     { name: 'France', rank: 3 },
     { name: 'South Africa', rank: 61 },
   ],
-  Eric: [
+  Christopher: [
     { name: 'Brazil', rank: 6 },
     { name: 'Qatar', rank: 56 },
   ],
-  Lucy: [
+  Victoria: [
     { name: 'Spain', rank: 2 },
     { name: 'Cabo Verde', rank: 67 },
   ],
@@ -106,7 +106,7 @@ const PLAYER_NATIONALITIES: Record<string, [CountryWithRank, CountryWithRank]> =
     { name: 'Morocco', rank: 7 },
     { name: 'Czechia', rank: 43 },
   ],
-  Sherry: [
+  Sebastian: [
     { name: 'Uruguay', rank: 16 },
     { name: 'Algeria', rank: 28 },
   ],
@@ -126,7 +126,7 @@ const PLAYER_NATIONALITIES: Record<string, [CountryWithRank, CountryWithRank]> =
     { name: 'United States', rank: 17 },
     { name: 'Türkiye', rank: 23 },
   ],
-  Rufina: [
+  Catherina: [
     { name: 'Japan', rank: 18 },
     { name: 'Egypt', rank: 29 },
   ],

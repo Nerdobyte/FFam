@@ -20,7 +20,7 @@ const FAMILY = [
   { name: 'Bella', code: 'BELLA0981' },
   { name: 'Nellie', code: 'NELLIE3392' },
   { name: 'Sherry', code: 'SHERRY9081' },
-  { name: 'Nadia', code: 'NADIA0547' },
+  { name: 'Nadia', code: 'NADIA_THE_DARK_QUEEN' },
   { name: 'Rainer', code: 'RAINER_THE_PHYSICIST' },
   { name: 'Ben', code: 'BEN_BIGGUS_DICKUS' },
   { name: 'Ozie', code: 'WIZ_OF_OZ' },
@@ -32,6 +32,10 @@ const FAMILY = [
   { name: 'Samit', code: 'SAMIT5625' },
   { name: 'Jason', code: 'JASON2080' },
   { name: 'Reuben', code: 'REUBEN6110' },
+  { name: 'Christopher', code: 'CHRIS0001' },
+  { name: 'Victoria', code: 'WITCHY_VICKY' },
+  { name: 'Sebastian', code: 'SEB1811' },
+  { name: 'Catherina', code: 'SMOKIN_HAWT_SISTA' },
 ];
 
 function initDb() {
