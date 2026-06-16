@@ -24,7 +24,6 @@ function readPrediction(data) {
 }
 
 function scorePoints(prediction, result) {
-  if (prediction === 'draw' && result === 'draw') return 1;
   if (prediction === result) return 3;
   return 0;
 }
