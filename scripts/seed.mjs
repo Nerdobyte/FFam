@@ -2,7 +2,6 @@ import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import {
   getFirestore,
   Timestamp,
-  FieldValue,
 } from 'firebase-admin/firestore';
 import { readFileSync } from 'fs';
 import { formatUkDateTime, ukKickoff } from './datetime.mjs';
@@ -67,9 +66,6 @@ async function main() {
       {
         name: member.name,
         code: member.code,
-        points: 0,
-        correctPredictions: 0,
-        totalPredictions: 0,
       },
       { merge: true },
     );
@@ -543,16 +539,18 @@ async function main() {
     const end = new Date(start);
     end.setUTCHours(end.getUTCHours() + 2);
 
-    batch.set(db.collection('matches').doc(m.id), {
-      teamA: m.teamA,
-      teamB: m.teamB,
-      startTime: Timestamp.fromDate(start),
-      endTime: Timestamp.fromDate(end),
-      result: null,
-      completed: false,
-      scored: false,
-      createdAt: FieldValue.serverTimestamp(),
-    });
+    const ref = db.collection('matches').doc(m.id);
+
+    batch.set(
+      ref,
+      {
+        teamA: m.teamA,
+        teamB: m.teamB,
+        startTime: Timestamp.fromDate(start),
+        endTime: Timestamp.fromDate(end),
+      },
+      { merge: true },
+    );
 
     console.log(
       `✔ ${m.teamA} vs ${m.teamB} → ${formatUkDateTime(start)} (${start.toISOString()})`,
