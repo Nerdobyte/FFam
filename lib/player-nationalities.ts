@@ -126,7 +126,7 @@ const PLAYER_NATIONALITIES: Record<string, [CountryWithRank, CountryWithRank]> =
     { name: 'United States', rank: 17 },
     { name: 'Türkiye', rank: 23 },
   ],
-  Catherina: [
+  Catarina: [
     { name: 'Japan', rank: 18 },
     { name: 'Egypt', rank: 29 },
   ],
