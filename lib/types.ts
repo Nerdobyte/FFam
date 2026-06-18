@@ -72,6 +72,17 @@ export function sortLeaderboard(users: User[]): User[] {
   });
 }
 
+/** Competition ranks by points — tied scores share the same position (e.g. 1, 1, 3). */
+export function assignLeaderboardRanks(users: User[]): number[] {
+  if (users.length === 0) return [];
+
+  const ranks = [1];
+  for (let i = 1; i < users.length; i++) {
+    ranks.push(users[i].points === users[i - 1].points ? ranks[i - 1] : i + 1);
+  }
+  return ranks;
+}
+
 export function getMatchStatus(match: Match, now = new Date()): MatchStatus {
   if (match.completed && match.result) return 'result-declared';
   if (now >= match.startTime) return 'voting-closed';

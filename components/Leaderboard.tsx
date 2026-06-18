@@ -1,7 +1,7 @@
 'use client';
 
 import type { User } from '@/lib/types';
-import { accuracyPercent } from '@/lib/types';
+import { accuracyPercent, assignLeaderboardRanks } from '@/lib/types';
 import { getPlayerNationalityInfo, formatCountryWithRank } from '@/lib/player-nationalities';
 
 interface LeaderboardProps {
@@ -9,7 +9,16 @@ interface LeaderboardProps {
   currentUserId?: string;
 }
 
+function rankBadgeStyle(rank: number): string {
+  if (rank === 1) return 'bg-gold-500 text-pitch-950';
+  if (rank === 2) return 'bg-slate-300 text-slate-800';
+  if (rank === 3) return 'bg-amber-700 text-white';
+  return 'bg-white/10 text-white/70';
+}
+
 export function Leaderboard({ users, currentUserId }: LeaderboardProps) {
+  const ranks = assignLeaderboardRanks(users);
+
   return (
     <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur-md lg:sticky lg:top-6">
       <p className="text-xs uppercase tracking-[0.25em] text-gold-400">Leaderboard</p>
@@ -22,6 +31,7 @@ export function Leaderboard({ users, currentUserId }: LeaderboardProps) {
       ) : (
         <ol className="mt-4 space-y-2">
           {users.map((user, index) => {
+            const rank = ranks[index];
             const accuracy = accuracyPercent(user.correctPredictions, user.totalPredictions);
             const nationalityInfo = getPlayerNationalityInfo(user.name);
             return (
@@ -35,17 +45,9 @@ export function Leaderboard({ users, currentUserId }: LeaderboardProps) {
               >
                 <div className="flex items-start gap-3">
                   <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                      index === 0
-                        ? 'bg-gold-500 text-pitch-950'
-                        : index === 1
-                          ? 'bg-slate-300 text-slate-800'
-                          : index === 2
-                            ? 'bg-amber-700 text-white'
-                            : 'bg-white/10 text-white/70'
-                    }`}
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${rankBadgeStyle(rank)}`}
                   >
-                    {index + 1}
+                    {rank}
                   </span>
 
                   <div className="min-w-0 flex-1">
