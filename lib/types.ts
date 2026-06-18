@@ -72,13 +72,17 @@ export function sortLeaderboard(users: User[]): User[] {
   });
 }
 
-/** Competition ranks by points — tied scores share the same position (e.g. 1, 1, 3). */
+/** Dense ranks by points — tied scores share a position; next tier increments by 1 (e.g. 1, 2, 2, 3). */
 export function assignLeaderboardRanks(users: User[]): number[] {
   if (users.length === 0) return [];
 
   const ranks = [1];
+  let rank = 1;
   for (let i = 1; i < users.length; i++) {
-    ranks.push(users[i].points === users[i - 1].points ? ranks[i - 1] : i + 1);
+    if (users[i].points !== users[i - 1].points) {
+      rank += 1;
+    }
+    ranks.push(rank);
   }
   return ranks;
 }
