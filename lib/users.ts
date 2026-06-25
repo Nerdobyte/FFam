@@ -7,6 +7,7 @@ function toUser(id: string, data: Record<string, unknown>): User {
     id,
     name: data.name as string,
     code: data.code as string,
+    nationality: (data.nationality as string | null | undefined) ?? null,
     points: (data.points as number) ?? 0,
     correctPredictions: (data.correctPredictions as number) ?? 0,
     totalPredictions: (data.totalPredictions as number) ?? 0,

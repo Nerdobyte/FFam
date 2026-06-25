@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "node scripts/seed.mjs",
-    "rescore": "node scripts/rescore.mjs"
+    "rescore": "node scripts/rescore.mjs",
+    "migrate-nationality": "node scripts/migrate-nationality.mjs"
   },
   "dependencies": {
     "firebase": "^11.6.0",

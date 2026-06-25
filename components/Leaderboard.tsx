@@ -2,7 +2,7 @@
 
 import type { User } from '@/lib/types';
 import { accuracyPercent, assignLeaderboardRanks } from '@/lib/types';
-import { getPlayerNationalityInfo, formatCountryWithRank } from '@/lib/player-nationalities';
+import { formatNationalityWithRank } from '@/lib/fifa-rankings';
 
 interface LeaderboardProps {
   users: User[];
@@ -33,7 +33,6 @@ export function Leaderboard({ users, currentUserId }: LeaderboardProps) {
           {users.map((user, index) => {
             const rank = ranks[index];
             const accuracy = accuracyPercent(user.correctPredictions, user.totalPredictions);
-            const nationalityInfo = getPlayerNationalityInfo(user.name);
             return (
               <li
                 key={user.id}
@@ -57,18 +56,10 @@ export function Leaderboard({ users, currentUserId }: LeaderboardProps) {
                         <span className="ml-1 text-xs font-normal text-gold-400">(you)</span>
                       )}
                     </p>
-                    {nationalityInfo && (
-                      <div className="mt-0.5 text-xs leading-snug text-white/40">
-                        <span className="block break-words">
-                          {formatCountryWithRank(nationalityInfo.countries[0])} /
-                        </span>
-                        <span className="block break-words">
-                          {formatCountryWithRank(nationalityInfo.countries[1])}
-                        </span>
-                        <p className="mt-0.5 text-[11px] text-white/30">
-                          Avg Rank: {nationalityInfo.averageRank.toFixed(1)}
-                        </p>
-                      </div>
+                    {user.nationality && (
+                      <p className="mt-0.5 break-words text-xs text-white/40">
+                        {formatNationalityWithRank(user.nationality)}
+                      </p>
                     )}
                     <p className="text-xs text-white/50">
                       {user.correctPredictions}/{user.totalPredictions} ({accuracy}%)

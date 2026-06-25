@@ -50,6 +50,7 @@ export async function loginWithCode(code: string): Promise<User> {
     id: userDoc.id,
     name: data.name,
     code: data.code,
+    nationality: data.nationality ?? null,
     points: data.points ?? 0,
     correctPredictions: data.correctPredictions ?? 0,
     totalPredictions: data.totalPredictions ?? 0,

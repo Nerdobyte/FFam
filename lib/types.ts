@@ -7,6 +7,7 @@ export interface User {
   id: string;
   name: string;
   code: string;
+  nationality: string | null;
   points: number;
   correctPredictions: number;
   totalPredictions: number;
@@ -93,14 +94,21 @@ export function getMatchStatus(match: Match, now = new Date()): MatchStatus {
   return 'voting-open';
 }
 
+function clampPercent(value: number): number {
+  return Math.min(100, Math.max(0, value));
+}
+
 export function votePercentages(
   totals: VoteTotals,
 ): { teamA: number; teamB: number; draw: number } {
   const total = totals.teamA + totals.teamB + totals.draw;
-  if (total === 0) return { teamA: 33, teamB: 33, draw: 34 };
-  const teamA = Math.round((totals.teamA / total) * 100);
-  const teamB = Math.round((totals.teamB / total) * 100);
-  return { teamA, teamB, draw: 100 - teamA - teamB };
+  if (total === 0) return { teamA: 0, teamB: 0, draw: 0 };
+
+  return {
+    teamA: clampPercent(Math.round((totals.teamA / total) * 100)),
+    teamB: clampPercent(Math.round((totals.teamB / total) * 100)),
+    draw: clampPercent(Math.round((totals.draw / total) * 100)),
+  };
 }
 
 export const MATCH_STATUS_LABELS: Record<MatchStatus, string> = {

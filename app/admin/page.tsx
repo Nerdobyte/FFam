@@ -34,6 +34,12 @@ interface LeaderboardAuditReport {
   repairedUserIds?: string[];
 }
 
+interface NationalityLockState {
+  lockAtLabel: string | null;
+  locked: boolean;
+  status: 'Active' | 'Locked';
+}
+
 export default function AdminPage() {
   const [authorized, setAuthorized] = useState(false);
   const [secret, setSecret] = useState('');
@@ -46,6 +52,23 @@ export default function AdminPage() {
   const [editKickoff, setEditKickoff] = useState('');
   const [auditReport, setAuditReport] = useState<LeaderboardAuditReport | null>(null);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [nationalityLock, setNationalityLock] = useState<NationalityLockState | null>(null);
+  const [editNationalityLock, setEditNationalityLock] = useState('');
+
+  const loadNationalityLock = async () => {
+    const res = await fetch('/api/admin/nationality-lock');
+    if (!res.ok) return null;
+    const data = await res.json();
+    setNationalityLock({
+      lockAtLabel: data.lockAtLabel ?? null,
+      locked: data.locked,
+      status: data.status,
+    });
+    if (data.lockAt) {
+      setEditNationalityLock(toUkDatetimeLocal(data.lockAt));
+    }
+    return data;
+  };
 
   const loadMatches = async () => {
     const res = await fetch('/api/admin/matches');
@@ -77,6 +100,7 @@ export default function AdminPage() {
             setMatchId(current.id);
             setEditKickoff(toUkDatetimeLocal(current.startTime));
           }
+          loadNationalityLock().catch(() => {});
         }
       })
       .catch(() => {});
@@ -99,6 +123,7 @@ export default function AdminPage() {
       setAuthorized(true);
       setSecret('');
       await loadMatches();
+      await loadNationalityLock();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -227,6 +252,28 @@ export default function AdminPage() {
       setMessage(err instanceof Error ? err.message : 'Audit failed');
     } finally {
       setAuditLoading(false);
+    }
+  };
+
+  const handleNationalityLockSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editNationalityLock) return;
+    setLoading(true);
+    setMessage('');
+    try {
+      const res = await fetch('/api/admin/nationality-lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lockAt: ukDatetimeLocalToIso(editNationalityLock) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setMessage(`Nationality lock updated — ${data.status} (deadline: ${data.lockAtLabel}).`);
+      await loadNationalityLock();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -455,6 +502,50 @@ export default function AdminPage() {
             )}
           </>
         )}
+      </section>
+
+      <section className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
+        <h2 className="text-lg font-semibold">Nationality lock</h2>
+        <p className="text-sm text-white/60">
+          After the lock deadline, players can no longer choose or change their nation.
+        </p>
+
+        {nationalityLock && (
+          <div className="rounded-xl bg-black/20 p-4 text-sm text-white/70">
+            <p>
+              Status:{' '}
+              <span className={nationalityLock.locked ? 'text-amber-300' : 'text-emerald-300'}>
+                {nationalityLock.status}
+              </span>
+            </p>
+            <p className="mt-1">
+              Lock deadline (UK):{' '}
+              <span className="text-white">
+                {nationalityLock.lockAtLabel ?? 'Not set'}
+              </span>
+            </p>
+          </div>
+        )}
+
+        <form onSubmit={handleNationalityLockSave} className="space-y-3">
+          <label className="block text-sm text-white/70">
+            Lock date/time (UK time)
+            <input
+              type="datetime-local"
+              value={editNationalityLock}
+              onChange={(e) => setEditNationalityLock(e.target.value)}
+              required
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-xl bg-gold-500 py-3 font-semibold text-pitch-950 disabled:opacity-60"
+          >
+            Save lock deadline
+          </button>
+        </form>
       </section>
 
       <section className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">

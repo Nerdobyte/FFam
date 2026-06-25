@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Leaderboard } from '@/components/Leaderboard';
+import { ChooseNationSection } from '@/components/ChooseNationSection';
 import { UpcomingMatchesSection } from '@/components/UpcomingMatchesSection';
 import { ensureAnonymousAuth, logoutUser, rebindSession } from '@/lib/auth';
 import { subscribeMatches } from '@/lib/matches';
@@ -89,7 +90,8 @@ export default function HomePage() {
           <Leaderboard users={leaderboard} currentUserId={user.id} />
         </div>
 
-        <div className="order-1 lg:order-2">
+        <div className="order-1 space-y-6 lg:order-2">
+          <ChooseNationSection user={user} />
           <UpcomingMatchesSection matches={matches} userId={user.id} />
         </div>
       </div>

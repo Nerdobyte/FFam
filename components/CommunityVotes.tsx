@@ -63,16 +63,18 @@ function PercentBar({
   percent: number;
   count: number;
 }) {
+  const barWidth = Math.min(100, Math.max(0, percent));
+
   return (
     <div>
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <span className="truncate text-sm font-semibold text-white">{label}</span>
-        <span className="shrink-0 text-sm font-bold text-gold-400">{percent}%</span>
+        <span className="shrink-0 text-sm font-bold text-gold-400">{barWidth}%</span>
       </div>
       <div className="h-3 overflow-hidden rounded-full bg-black/30">
         <div
           className="h-full rounded-full bg-gold-500 transition-all duration-500"
-          style={{ width: `${percent}%` }}
+          style={{ width: `${barWidth}%` }}
         />
       </div>
       <p className="mt-1 text-xs text-white/40">
