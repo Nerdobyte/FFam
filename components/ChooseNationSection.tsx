@@ -10,6 +10,7 @@ interface ChooseNationSectionProps {
 
 interface LockStatus {
   locked: boolean;
+  lockAtLabel: string | null;
   teams: string[];
 }
 
@@ -25,7 +26,11 @@ export function ChooseNationSection({ user }: ChooseNationSectionProps) {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) {
-          setLockStatus({ locked: data.locked, teams: data.teams ?? [] });
+          setLockStatus({
+            locked: data.locked,
+            lockAtLabel: data.lockAtLabel ?? null,
+            teams: data.teams ?? [],
+          });
         }
       })
       .catch(() => {});
@@ -99,7 +104,9 @@ export function ChooseNationSection({ user }: ChooseNationSectionProps) {
       {user.nationality ? (
         <p className="mt-2 text-sm text-white/60">
           Current: <span className="text-white">{formatNationalityWithRank(user.nationality)}</span>
-          {!lockStatus.locked && ' — you can change until the deadline.'}
+          {!lockStatus.locked && lockStatus.lockAtLabel && (
+            <> — you can change until {lockStatus.lockAtLabel}.</>
+          )}
         </p>
       ) : (
         <p className="mt-2 text-sm text-white/60">

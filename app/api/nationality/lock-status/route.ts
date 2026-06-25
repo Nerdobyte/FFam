@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { formatUkDateTime } from '@/lib/datetime';
 import {
   getNationalityLockSettings,
   isNationalityLocked,
@@ -11,6 +12,7 @@ export async function GET() {
 
   return NextResponse.json({
     lockAt: lockAt?.toISOString() ?? null,
+    lockAtLabel: lockAt ? formatUkDateTime(lockAt) : null,
     locked,
     teams: WORLD_CUP_TEAMS,
   });
