@@ -5,6 +5,9 @@ import { TodayMatchCard } from '@/components/TodayMatchCard';
 import { getUpcomingMatches, getVotableUpcomingMatches } from '@/lib/matches';
 import type { Match } from '@/lib/types';
 
+const LATEST_RESULTS_URL =
+  'https://www.google.com/search?q=FIFA+World+Cup+2026+matches&hl=en';
+
 interface UpcomingMatchesSectionProps {
   matches: Match[];
   userId: string;
@@ -33,6 +36,15 @@ export function UpcomingMatchesSection({ matches, userId }: UpcomingMatchesSecti
               : 'All upcoming matches have kicked off — voting closed'}
           </p>
         )}
+        <a
+          href={LATEST_RESULTS_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-gold-400 transition hover:text-gold-300"
+        >
+          FIFA Live
+          <span aria-hidden="true">↗</span>
+        </a>
       </div>
 
       {upcomingMatches.length === 0 ? (
