@@ -528,6 +528,102 @@ async function main() {
       teamB: 'Argentina',
       kickoff: [2026, 6, 28, 3, 0],
     },
+    {
+      id: '2026-06-28-zaf-can',
+      teamA: 'South Africa',
+      teamB: 'Canada',
+      kickoff: [2026, 6, 28, 20, 0],
+    },
+    {
+      id: '2026-06-29-bra-jpn',
+      teamA: 'Brazil',
+      teamB: 'Japan',
+      kickoff: [2026, 6, 29, 18, 0],
+    },
+    {
+      id: '2026-06-29-deu-pry',
+      teamA: 'Germany',
+      teamB: 'Paraguay',
+      kickoff: [2026, 6, 29, 21, 30],
+    },
+    {
+      id: '2026-06-30-nld-mar',
+      teamA: 'Netherlands',
+      teamB: 'Morocco',
+      kickoff: [2026, 6, 30, 2, 0],
+    },
+    {
+      id: '2026-06-30-civ-nor',
+      teamA: 'Ivory Coast',
+      teamB: 'Norway',
+      kickoff: [2026, 6, 30, 18, 0],
+    },
+    {
+      id: '2026-06-30-fra-swe',
+      teamA: 'France',
+      teamB: 'Sweden',
+      kickoff: [2026, 6, 30, 22, 0],
+    },
+    {
+      id: '2026-07-01-mex-ecu',
+      teamA: 'Mexico',
+      teamB: 'Ecuador',
+      kickoff: [2026, 7, 1, 2, 0],
+    },
+    {
+      id: '2026-07-01-eng-drc',
+      teamA: 'England',
+      teamB: 'DR Congo',
+      kickoff: [2026, 7, 1, 17, 0],
+    },
+    {
+      id: '2026-07-01-bel-sen',
+      teamA: 'Belgium',
+      teamB: 'Senegal',
+      kickoff: [2026, 7, 1, 21, 0],
+    },
+    {
+      id: '2026-07-02-usa-bih',
+      teamA: 'United States',
+      teamB: 'Bosnia-Herzegovina',
+      kickoff: [2026, 7, 2, 1, 0],
+    },
+    {
+      id: '2026-07-02-esp-aut',
+      teamA: 'Spain',
+      teamB: 'Austria',
+      kickoff: [2026, 7, 2, 20, 0],
+    },
+    {
+      id: '2026-07-03-prt-hrv',
+      teamA: 'Portugal',
+      teamB: 'Croatia',
+      kickoff: [2026, 7, 3, 0, 0],
+    },
+    {
+      id: '2026-07-03-che-dza',
+      teamA: 'Switzerland',
+      teamB: 'Algeria',
+      kickoff: [2026, 7, 3, 4, 0],
+    },
+    {
+      id: '2026-07-03-aus-egy',
+      teamA: 'Australia',
+      teamB: 'Egypt',
+      kickoff: [2026, 7, 3, 19, 0],
+    },
+    {
+      id: '2026-07-03-arg-cpv',
+      teamA: 'Argentina',
+      teamB: 'Cape Verde',
+      kickoff: [2026, 7, 3, 23, 0],
+    },
+    {
+      id: '2026-07-04-col-gha',
+      teamA: 'Colombia',
+      teamB: 'Ghana',
+      kickoff: [2026, 7, 4, 2, 30],
+    },
   ];
 
   console.log('\n--- Seeding matches (kickoffs in UK time) ---');
