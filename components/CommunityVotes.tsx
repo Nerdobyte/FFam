@@ -8,9 +8,16 @@ interface CommunityVotesProps {
   totals: VoteTotals | null;
   hasVoted: boolean;
   loading?: boolean;
+  drawEnabled?: boolean;
 }
 
-export function CommunityVotes({ match, totals, hasVoted, loading }: CommunityVotesProps) {
+export function CommunityVotes({
+  match,
+  totals,
+  hasVoted,
+  loading,
+  drawEnabled = true,
+}: CommunityVotesProps) {
   if (!hasVoted) {
     return (
       <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur-md lg:sticky lg:top-6">
@@ -43,7 +50,9 @@ export function CommunityVotes({ match, totals, hasVoted, loading }: CommunityVo
 
       <div className="mt-5 space-y-5">
         <PercentBar label={match.teamA} percent={pct.teamA} count={totals.teamA} />
-        <PercentBar label="Draw" percent={pct.draw} count={totals.draw} />
+        {drawEnabled && (
+          <PercentBar label="Draw" percent={pct.draw} count={totals.draw} />
+        )}
         <PercentBar label={match.teamB} percent={pct.teamB} count={totals.teamB} />
       </div>
 

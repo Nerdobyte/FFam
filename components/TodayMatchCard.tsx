@@ -17,9 +17,15 @@ interface TodayMatchCardProps {
   match: Match;
   userId: string;
   compactHeader?: boolean;
+  drawEnabled?: boolean;
 }
 
-export function TodayMatchCard({ match, userId, compactHeader }: TodayMatchCardProps) {
+export function TodayMatchCard({
+  match,
+  userId,
+  compactHeader,
+  drawEnabled = true,
+}: TodayMatchCardProps) {
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [totals, setTotals] = useState<VoteTotals | null>(null);
   const [totalsLoading, setTotalsLoading] = useState(false);
@@ -85,6 +91,7 @@ export function TodayMatchCard({ match, userId, compactHeader }: TodayMatchCardP
         onVote={handleVote}
         votingEnabled={votingOpen}
         compactKickoff={compactHeader}
+        drawEnabled={drawEnabled}
       />
 
       {voteError && (
@@ -110,6 +117,7 @@ export function TodayMatchCard({ match, userId, compactHeader }: TodayMatchCardP
         totals={totals}
         hasVoted={prediction !== null}
         loading={totalsLoading}
+        drawEnabled={drawEnabled}
       />
     </article>
   );

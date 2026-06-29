@@ -13,6 +13,7 @@ interface MatchCardProps {
   onVote: (prediction: Prediction) => void;
   votingEnabled?: boolean;
   compactKickoff?: boolean;
+  drawEnabled?: boolean;
 }
 
 const STATUS_STYLES: Record<MatchStatus, string> = {
@@ -28,6 +29,7 @@ export function MatchCard({
   onVote,
   votingEnabled = true,
   compactKickoff = false,
+  drawEnabled = true,
 }: MatchCardProps) {
   const [now, setNow] = useState(new Date());
   const votingOpen = votingEnabled && isVotingOpen(match, now);
@@ -68,7 +70,11 @@ export function MatchCard({
         </div>
       </div>
 
-      <div className="grid gap-4 px-6 py-8 md:grid-cols-3 md:items-center">
+      <div
+        className={`grid gap-4 px-6 py-8 md:items-center ${
+          drawEnabled ? 'md:grid-cols-3' : 'md:grid-cols-[1fr_auto_1fr]'
+        }`}
+      >
         <VoteButton
           team={match.teamA}
           selected={userPrediction === 'teamA'}
@@ -76,11 +82,17 @@ export function MatchCard({
           onClick={() => onVote('teamA')}
         />
 
-        <DrawButton
-          selected={userPrediction === 'draw'}
-          disabled={!votingOpen || voting}
-          onClick={() => onVote('draw')}
-        />
+        {drawEnabled ? (
+          <DrawButton
+            selected={userPrediction === 'draw'}
+            disabled={!votingOpen || voting}
+            onClick={() => onVote('draw')}
+          />
+        ) : (
+          <div className="hidden text-center md:block">
+            <p className="text-4xl font-black text-white/30">VS</p>
+          </div>
+        )}
 
         <VoteButton
           team={match.teamB}

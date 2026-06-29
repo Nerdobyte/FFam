@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { TodayMatchCard } from '@/components/TodayMatchCard';
 import { getUpcomingMatches, getVotableUpcomingMatches } from '@/lib/matches';
+import { subscribeDrawEnabled } from '@/lib/voting-settings-client';
 import type { Match } from '@/lib/types';
 
 const LATEST_RESULTS_URL =
@@ -15,10 +16,16 @@ interface UpcomingMatchesSectionProps {
 
 export function UpcomingMatchesSection({ matches, userId }: UpcomingMatchesSectionProps) {
   const [now, setNow] = useState(new Date());
+  const [drawEnabled, setDrawEnabled] = useState(true);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const unsub = subscribeDrawEnabled(setDrawEnabled);
+    return unsub;
   }, []);
 
   const upcomingMatches = getUpcomingMatches(matches, now);
@@ -63,6 +70,7 @@ export function UpcomingMatchesSection({ matches, userId }: UpcomingMatchesSecti
               match={match}
               userId={userId}
               compactHeader={upcomingMatches.length > 1}
+              drawEnabled={drawEnabled}
             />
           ))}
         </div>

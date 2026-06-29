@@ -20,9 +20,19 @@ service cloud.firestore {
       return match.completed == false && match.startTime > request.time;
     }
 
+    function drawVotingEnabled() {
+      return !exists(/databases/$(database)/documents/settings/voting)
+        || get(/databases/$(database)/documents/settings/voting).data.drawEnabled != false;
+    }
+
+    function validPrediction(prediction) {
+      return prediction in ['teamA', 'teamB']
+        || (prediction == 'draw' && drawVotingEnabled());
+    }
+
     function validVoteData() {
       return request.resource.data.keys().hasAll(['matchId', 'userId', 'prediction', 'createdAt'])
-        && request.resource.data.prediction in ['teamA', 'teamB', 'draw'];
+        && validPrediction(request.resource.data.prediction);
     }
 
     match /users/{userId} {
@@ -60,7 +70,7 @@ service cloud.firestore {
         && request.resource.data.matchId == resource.data.matchId
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['prediction', 'updatedAt'])
-        && request.resource.data.prediction in ['teamA', 'teamB', 'draw']
+        && validPrediction(request.resource.data.prediction)
         && matchIsOpenForVoting(resource.data.matchId);
 
       allow delete: if false;

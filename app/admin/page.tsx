@@ -54,6 +54,7 @@ export default function AdminPage() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [nationalityLock, setNationalityLock] = useState<NationalityLockState | null>(null);
   const [editNationalityLock, setEditNationalityLock] = useState('');
+  const [drawDisabled, setDrawDisabled] = useState(false);
 
   const loadNationalityLock = async () => {
     const res = await fetch('/api/admin/nationality-lock');
@@ -67,6 +68,14 @@ export default function AdminPage() {
     if (data.lockAt) {
       setEditNationalityLock(toUkDatetimeLocal(data.lockAt));
     }
+    return data;
+  };
+
+  const loadVotingSettings = async () => {
+    const res = await fetch('/api/admin/voting-settings');
+    if (!res.ok) return null;
+    const data = await res.json();
+    setDrawDisabled(data.drawDisabled === true);
     return data;
   };
 
@@ -101,6 +110,7 @@ export default function AdminPage() {
             setEditKickoff(toUkDatetimeLocal(current.startTime));
           }
           loadNationalityLock().catch(() => {});
+          loadVotingSettings().catch(() => {});
         }
       })
       .catch(() => {});
@@ -124,6 +134,7 @@ export default function AdminPage() {
       setSecret('');
       await loadMatches();
       await loadNationalityLock();
+      await loadVotingSettings();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -252,6 +263,27 @@ export default function AdminPage() {
       setMessage(err instanceof Error ? err.message : 'Audit failed');
     } finally {
       setAuditLoading(false);
+    }
+  };
+
+  const handleDrawDisabledToggle = async () => {
+    const next = !drawDisabled;
+    setLoading(true);
+    setMessage('');
+    try {
+      const res = await fetch('/api/admin/voting-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ drawDisabled: next }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setDrawDisabled(next);
+      setMessage(next ? 'Draw button disabled for users.' : 'Draw button enabled for users.');
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -502,6 +534,29 @@ export default function AdminPage() {
             )}
           </>
         )}
+      </section>
+
+      <section className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
+        <h2 className="text-lg font-semibold">Voting options</h2>
+        <p className="text-sm text-white/60">
+          Control which options users see when casting predictions.
+        </p>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-4">
+          <input
+            type="checkbox"
+            checked={drawDisabled}
+            disabled={loading}
+            onChange={handleDrawDisabledToggle}
+            className="mt-1 h-4 w-4 rounded border-white/20 bg-black/30 accent-gold-500"
+          />
+          <span>
+            <span className="block text-sm font-medium text-white">Disable Draw button</span>
+            <span className="mt-1 block text-sm text-white/50">
+              When enabled, the Draw option is hidden on the user page and cannot be voted for.
+            </span>
+          </span>
+        </label>
       </section>
 
       <section className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
