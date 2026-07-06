@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { toUkDatetimeLocal, ukDatetimeLocalToIso } from '@/lib/datetime';
+import { formatUkDateTime, toUkDatetimeLocal, ukDatetimeLocalToIso } from '@/lib/datetime';
 import type { Prediction } from '@/lib/types';
 
 interface AdminMatch {
@@ -40,6 +40,22 @@ interface NationalityLockState {
   status: 'Active' | 'Locked';
 }
 
+interface AdminUser {
+  id: string;
+  name: string;
+}
+
+interface BonusPointAward {
+  id: string;
+  userId: string;
+  userName: string;
+  matchId: string;
+  matchLabel: string;
+  points: number;
+  reason: string | null;
+  createdAt: string;
+}
+
 export default function AdminPage() {
   const [authorized, setAuthorized] = useState(false);
   const [secret, setSecret] = useState('');
@@ -55,6 +71,13 @@ export default function AdminPage() {
   const [nationalityLock, setNationalityLock] = useState<NationalityLockState | null>(null);
   const [editNationalityLock, setEditNationalityLock] = useState('');
   const [drawDisabled, setDrawDisabled] = useState(false);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [bonusAwards, setBonusAwards] = useState<BonusPointAward[]>([]);
+  const [bonusMatchId, setBonusMatchId] = useState('');
+  const [bonusUserId, setBonusUserId] = useState('');
+  const [bonusPoints, setBonusPoints] = useState('');
+  const [bonusReason, setBonusReason] = useState('');
+  const [bonusLoading, setBonusLoading] = useState(false);
 
   const loadNationalityLock = async () => {
     const res = await fetch('/api/admin/nationality-lock');
@@ -79,6 +102,25 @@ export default function AdminPage() {
     return data;
   };
 
+  const loadUsers = async () => {
+    const res = await fetch('/api/admin/users');
+    if (!res.ok) return [];
+    const data = await res.json();
+    setUsers(data.users);
+    if (data.users.length > 0 && !bonusUserId) {
+      setBonusUserId(data.users[0].id);
+    }
+    return data.users as AdminUser[];
+  };
+
+  const loadBonusAwards = async () => {
+    const res = await fetch('/api/admin/bonus-points');
+    if (!res.ok) return [];
+    const data = await res.json();
+    setBonusAwards(data.awards);
+    return data.awards as BonusPointAward[];
+  };
+
   const loadMatches = async () => {
     const res = await fetch('/api/admin/matches');
     if (!res.ok) {
@@ -92,6 +134,7 @@ export default function AdminPage() {
     if (current) {
       setMatchId(current.id);
       setEditKickoff(toUkDatetimeLocal(current.startTime));
+      if (!bonusMatchId) setBonusMatchId(current.id);
     }
 
     return data.matches as AdminMatch[];
@@ -108,9 +151,12 @@ export default function AdminPage() {
           if (current) {
             setMatchId(current.id);
             setEditKickoff(toUkDatetimeLocal(current.startTime));
+            setBonusMatchId(current.id);
           }
           loadNationalityLock().catch(() => {});
           loadVotingSettings().catch(() => {});
+          loadUsers().catch(() => {});
+          loadBonusAwards().catch(() => {});
         }
       })
       .catch(() => {});
@@ -135,6 +181,8 @@ export default function AdminPage() {
       await loadMatches();
       await loadNationalityLock();
       await loadVotingSettings();
+      await loadUsers();
+      await loadBonusAwards();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -306,6 +354,58 @@ export default function AdminPage() {
       setMessage(err instanceof Error ? err.message : 'Failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAwardBonus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const points = Number(bonusPoints);
+    if (!bonusMatchId || !bonusUserId || !Number.isInteger(points) || points === 0) {
+      setMessage('Select a match and user, and enter a non-zero whole number of points.');
+      return;
+    }
+
+    setBonusLoading(true);
+    setMessage('');
+    try {
+      const res = await fetch('/api/admin/bonus-points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          matchId: bonusMatchId,
+          userId: bonusUserId,
+          points,
+          reason: bonusReason.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to award bonus');
+      setMessage(
+        `Awarded ${points > 0 ? '+' : ''}${points} bonus point(s) to ${data.award.userName}.`,
+      );
+      setBonusPoints('');
+      setBonusReason('');
+      await loadBonusAwards();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to award bonus');
+    } finally {
+      setBonusLoading(false);
+    }
+  };
+
+  const handleDeleteBonus = async (id: string) => {
+    setBonusLoading(true);
+    setMessage('');
+    try {
+      const res = await fetch(`/api/admin/bonus-points/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete bonus');
+      setMessage('Bonus point award removed.');
+      await loadBonusAwards();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to delete bonus');
+    } finally {
+      setBonusLoading(false);
     }
   };
 
@@ -604,10 +704,128 @@ export default function AdminPage() {
       </section>
 
       <section className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
+        <h2 className="text-lg font-semibold">Bonus Points</h2>
+        <p className="text-sm text-white/60">
+          Award or deduct bonus points for a specific match. Users only see their updated total on
+          the leaderboard.
+        </p>
+
+        <form onSubmit={handleAwardBonus} className="space-y-3">
+          <label className="block text-sm text-white/70">
+            Match
+            <select
+              value={bonusMatchId}
+              onChange={(e) => setBonusMatchId(e.target.value)}
+              required
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white"
+            >
+              {matches.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.teamA} vs {m.teamB}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block text-sm text-white/70">
+            User
+            <select
+              value={bonusUserId}
+              onChange={(e) => setBonusUserId(e.target.value)}
+              required
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white"
+            >
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block text-sm text-white/70">
+            Points
+            <input
+              type="number"
+              value={bonusPoints}
+              onChange={(e) => setBonusPoints(e.target.value)}
+              placeholder="e.g. 3 or -2"
+              required
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white"
+            />
+          </label>
+
+          <label className="block text-sm text-white/70">
+            Reason (optional)
+            <input
+              type="text"
+              value={bonusReason}
+              onChange={(e) => setBonusReason(e.target.value)}
+              placeholder="e.g. Closest to correct scoreline"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white"
+            />
+          </label>
+
+          <button
+            type="submit"
+            disabled={bonusLoading || users.length === 0}
+            className="w-full rounded-xl bg-gold-500 py-3 font-semibold text-pitch-950 disabled:opacity-60"
+          >
+            {bonusLoading ? 'Saving…' : 'Award Bonus'}
+          </button>
+        </form>
+
+        {bonusAwards.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-left text-xs">
+              <thead>
+                <tr className="border-b border-white/10 text-white/50">
+                  <th className="py-2 pr-3 font-medium">Match</th>
+                  <th className="py-2 pr-3 font-medium">User</th>
+                  <th className="py-2 pr-3 font-medium">Points</th>
+                  <th className="py-2 pr-3 font-medium">Reason</th>
+                  <th className="py-2 pr-3 font-medium">Date</th>
+                  <th className="py-2 font-medium" />
+                </tr>
+              </thead>
+              <tbody>
+                {bonusAwards.map((award) => (
+                  <tr key={award.id} className="border-b border-white/5">
+                    <td className="py-2 pr-3 text-white">{award.matchLabel}</td>
+                    <td className="py-2 pr-3 text-white">{award.userName}</td>
+                    <td
+                      className={`py-2 pr-3 font-medium ${award.points > 0 ? 'text-emerald-300' : 'text-red-300'}`}
+                    >
+                      {award.points > 0 ? '+' : ''}
+                      {award.points}
+                    </td>
+                    <td className="py-2 pr-3 text-white/60">{award.reason ?? '—'}</td>
+                    <td className="py-2 pr-3 text-white/60">
+                      {formatUkDateTime(new Date(award.createdAt))}
+                    </td>
+                    <td className="py-2">
+                      <button
+                        type="button"
+                        disabled={bonusLoading}
+                        onClick={() => handleDeleteBonus(award.id)}
+                        className="rounded-lg border border-red-500/30 px-2 py-1 text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
         <h2 className="text-lg font-semibold">Leaderboard integrity</h2>
         <p className="text-sm text-white/60">
           Compare each player&apos;s stored points and win counts against their votes on all scored
-          matches. Use this after re-applying scoring or if totals look wrong.
+          matches plus any bonus points. Use this after re-applying scoring or if totals look wrong.
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2">

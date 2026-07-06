@@ -1,3 +1,4 @@
+import { getBonusPointsByUser } from './bonus-points';
 import { getAdminDb } from './firebase-admin';
 import type { Prediction } from './types';
 import { scorePoints } from './types';
@@ -42,14 +43,15 @@ function statsMatch(a: UserLeaderboardStats, b: UserLeaderboardStats): boolean {
   );
 }
 
-/** Recompute each user's stats from votes on scored matches. */
+/** Recompute each user's stats from votes on scored matches plus bonus points. */
 export async function auditLeaderboard(): Promise<LeaderboardAuditResult> {
   const db = getAdminDb();
 
-  const [matchesSnap, votesSnap, usersSnap] = await Promise.all([
+  const [matchesSnap, votesSnap, usersSnap, bonusByUser] = await Promise.all([
     db.collection('matches').get(),
     db.collection('votes').get(),
     db.collection('users').get(),
+    getBonusPointsByUser(),
   ]);
 
   const scoredResults = new Map<string, Prediction>();
@@ -95,7 +97,12 @@ export async function auditLeaderboard(): Promise<LeaderboardAuditResult> {
       correctPredictions: (data.correctPredictions as number) ?? 0,
       totalPredictions: (data.totalPredictions as number) ?? 0,
     };
-    const expected = expectedByUser.get(doc.id) ?? emptyStats();
+    const predictionStats = expectedByUser.get(doc.id) ?? emptyStats();
+    const bonusTotal = bonusByUser.get(doc.id) ?? 0;
+    const expected: UserLeaderboardStats = {
+      ...predictionStats,
+      points: predictionStats.points + bonusTotal,
+    };
     return {
       userId: doc.id,
       name: (data.name as string) ?? doc.id,
