@@ -672,6 +672,30 @@ async function main() {
       teamB: 'Colombia',
       kickoff: [2026, 7, 7, 21, 0],
     },
+    {
+      id: '2026-07-09-fra-mar',
+      teamA: 'France',
+      teamB: 'Morocco',
+      kickoff: [2026, 7, 9, 21, 0],
+    },
+    {
+      id: '2026-07-10-esp-bel',
+      teamA: 'Spain',
+      teamB: 'Belgium',
+      kickoff: [2026, 7, 10, 20, 0],
+    },
+    {
+      id: '2026-07-11-nor-eng',
+      teamA: 'Norway',
+      teamB: 'England',
+      kickoff: [2026, 7, 11, 22, 0],
+    },
+    {
+      id: '2026-07-12-arg-sui',
+      teamA: 'Argentina',
+      teamB: 'Switzerland',
+      kickoff: [2026, 7, 12, 2, 0],
+    },
   ];
 
   console.log('\n--- Seeding matches (kickoffs in UK time) ---');
