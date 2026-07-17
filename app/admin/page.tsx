@@ -45,6 +45,17 @@ interface AdminUser {
   name: string;
 }
 
+interface FinalScoreSettingsState {
+  enabled: boolean;
+  manualLocked: boolean;
+  locked: boolean;
+  lockTime: string | null;
+  lockTimeLabel: string | null;
+  finalTeamA: string;
+  finalTeamB: string;
+  status: 'Locked' | 'Open';
+}
+
 interface BonusPointAward {
   id: string;
   userId: string;
@@ -78,6 +89,11 @@ export default function AdminPage() {
   const [bonusPoints, setBonusPoints] = useState('');
   const [bonusReason, setBonusReason] = useState('');
   const [bonusLoading, setBonusLoading] = useState(false);
+  const [finalScore, setFinalScore] = useState<FinalScoreSettingsState | null>(null);
+  const [finalScoreLockTime, setFinalScoreLockTime] = useState('');
+  const [finalScoreManualLocked, setFinalScoreManualLocked] = useState(false);
+  const [finalTeamA, setFinalTeamA] = useState('Spain');
+  const [finalTeamB, setFinalTeamB] = useState('Argentina');
 
   const loadNationalityLock = async () => {
     const res = await fetch('/api/admin/nationality-lock');
@@ -121,6 +137,24 @@ export default function AdminPage() {
     return data.awards as BonusPointAward[];
   };
 
+  const applyFinalScore = (data: FinalScoreSettingsState) => {
+    setFinalScore(data);
+    setFinalScoreManualLocked(data.manualLocked);
+    setFinalTeamA(data.finalTeamA);
+    setFinalTeamB(data.finalTeamB);
+    if (data.lockTime) {
+      setFinalScoreLockTime(toUkDatetimeLocal(data.lockTime));
+    }
+  };
+
+  const loadFinalScore = async () => {
+    const res = await fetch('/api/admin/final-score');
+    if (!res.ok) return null;
+    const data = (await res.json()) as FinalScoreSettingsState;
+    applyFinalScore(data);
+    return data;
+  };
+
   const loadMatches = async () => {
     const res = await fetch('/api/admin/matches');
     if (!res.ok) {
@@ -157,6 +191,7 @@ export default function AdminPage() {
           loadVotingSettings().catch(() => {});
           loadUsers().catch(() => {});
           loadBonusAwards().catch(() => {});
+          loadFinalScore().catch(() => {});
         }
       })
       .catch(() => {});
@@ -183,6 +218,7 @@ export default function AdminPage() {
       await loadVotingSettings();
       await loadUsers();
       await loadBonusAwards();
+      await loadFinalScore();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -406,6 +442,39 @@ export default function AdminPage() {
       setMessage(err instanceof Error ? err.message : 'Failed to delete bonus');
     } finally {
       setBonusLoading(false);
+    }
+  };
+
+  const handleFinalScoreSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!finalTeamA.trim() || !finalTeamB.trim()) {
+      setMessage('Both team names are required for the final score prediction.');
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+    try {
+      const res = await fetch('/api/admin/final-score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          locked: finalScoreManualLocked,
+          lockTime: finalScoreLockTime ? ukDatetimeLocalToIso(finalScoreLockTime) : null,
+          finalTeamA: finalTeamA.trim(),
+          finalTeamB: finalTeamB.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      applyFinalScore(data);
+      setMessage(
+        `Final score prediction saved — ${data.status}${data.lockTimeLabel ? ` (locks ${data.lockTimeLabel})` : ''}.`,
+      );
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -699,6 +768,90 @@ export default function AdminPage() {
             className="w-full rounded-xl bg-gold-500 py-3 font-semibold text-pitch-950 disabled:opacity-60"
           >
             Save lock deadline
+          </button>
+        </form>
+      </section>
+
+      <section className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
+        <h2 className="text-lg font-semibold">World Cup Final Score Prediction Settings</h2>
+        <p className="text-sm text-white/60">
+          Standalone exact-score prediction, separate from the normal match winner vote. Saving
+          enables the card on the homepage for all users.
+        </p>
+
+        {finalScore && (
+          <div className="rounded-xl bg-black/20 p-4 text-sm text-white/70">
+            <p>
+              Status:{' '}
+              <span className={finalScore.locked ? 'text-amber-300' : 'text-emerald-300'}>
+                {finalScore.status}
+              </span>
+              {finalScore.locked && finalScore.manualLocked ? ' (manual)' : ''}
+            </p>
+            <p className="mt-1">
+              Lock time (UK):{' '}
+              <span className="text-white">{finalScore.lockTimeLabel ?? 'Not set'}</span>
+            </p>
+            <p className="mt-1">
+              Card visible to users:{' '}
+              <span className="text-white">{finalScore.enabled ? 'Yes' : 'No (save to enable)'}</span>
+            </p>
+          </div>
+        )}
+
+        <form onSubmit={handleFinalScoreSave} className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm text-white/70">
+              Final Team A
+              <input
+                value={finalTeamA}
+                onChange={(e) => setFinalTeamA(e.target.value)}
+                required
+                className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white"
+              />
+            </label>
+            <label className="block text-sm text-white/70">
+              Final Team B
+              <input
+                value={finalTeamB}
+                onChange={(e) => setFinalTeamB(e.target.value)}
+                required
+                className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white"
+              />
+            </label>
+          </div>
+
+          <label className="block text-sm text-white/70">
+            Lock time (UK time)
+            <input
+              type="datetime-local"
+              value={finalScoreLockTime}
+              onChange={(e) => setFinalScoreLockTime(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white"
+            />
+          </label>
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-4">
+            <input
+              type="checkbox"
+              checked={finalScoreManualLocked}
+              onChange={(e) => setFinalScoreManualLocked(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-white/20 bg-black/30 accent-gold-500"
+            />
+            <span>
+              <span className="block text-sm font-medium text-white">Manually lock predictions</span>
+              <span className="mt-1 block text-sm text-white/50">
+                When enabled, predictions are locked immediately, regardless of the lock time.
+              </span>
+            </span>
+          </label>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-xl bg-gold-500 py-3 font-semibold text-pitch-950 disabled:opacity-60"
+          >
+            Save final score settings
           </button>
         </form>
       </section>

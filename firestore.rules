@@ -60,6 +60,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /finalScorePredictions/{userId} {
+      allow read: if isSignedIn()
+        && get(/databases/$(database)/documents/users/$(userId)).data.authUid == request.auth.uid;
+      allow write: if false;
+    }
+
     match /votes/{voteId} {
       allow read: if isSignedIn() && isVoteOwner(resource.data.userId);
 
