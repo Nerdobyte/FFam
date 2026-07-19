@@ -111,3 +111,41 @@ export async function saveFinalScorePrediction(
       { merge: true },
     );
 }
+
+export interface FinalScorePredictionRow {
+  userId: string;
+  userName: string;
+  scoreTeamA: number | null;
+  scoreTeamB: number | null;
+}
+
+/** List every user with their score prediction (or null if they never submitted). */
+export async function listFinalScorePredictions(): Promise<FinalScorePredictionRow[]> {
+  const db = getAdminDb();
+  const [usersSnap, predictionsSnap] = await Promise.all([
+    db.collection('users').get(),
+    db.collection(PREDICTIONS_COLLECTION).get(),
+  ]);
+
+  const predictions = new Map<string, { scoreTeamA: number; scoreTeamB: number }>();
+  for (const doc of predictionsSnap.docs) {
+    const data = doc.data();
+    if (typeof data.scoreTeamA !== 'number' || typeof data.scoreTeamB !== 'number') continue;
+    predictions.set(doc.id, {
+      scoreTeamA: data.scoreTeamA,
+      scoreTeamB: data.scoreTeamB,
+    });
+  }
+
+  return usersSnap.docs
+    .map((doc) => {
+      const prediction = predictions.get(doc.id) ?? null;
+      return {
+        userId: doc.id,
+        userName: (doc.data().name as string) ?? doc.id,
+        scoreTeamA: prediction?.scoreTeamA ?? null,
+        scoreTeamB: prediction?.scoreTeamB ?? null,
+      };
+    })
+    .sort((a, b) => a.userName.localeCompare(b.userName));
+}

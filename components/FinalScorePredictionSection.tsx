@@ -16,6 +16,13 @@ interface FinalScoreStatus {
   finalTeamB: string;
 }
 
+interface PredictionRow {
+  userId: string;
+  userName: string;
+  scoreTeamA: number | null;
+  scoreTeamB: number | null;
+}
+
 export function FinalScorePredictionSection({ user }: FinalScorePredictionSectionProps) {
   const [status, setStatus] = useState<FinalScoreStatus | null>(null);
   const [scoreA, setScoreA] = useState('');
@@ -23,6 +30,7 @@ export function FinalScorePredictionSection({ user }: FinalScorePredictionSectio
   const [submitted, setSubmitted] = useState<{ scoreTeamA: number; scoreTeamB: number } | null>(
     null,
   );
+  const [predictions, setPredictions] = useState<PredictionRow[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -56,6 +64,36 @@ export function FinalScorePredictionSection({ user }: FinalScorePredictionSectio
     });
     return () => unsub();
   }, [user.id]);
+
+  useEffect(() => {
+    if (!status?.locked) {
+      setPredictions(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { auth } = await import('@/lib/firebase');
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) return;
+
+        const res = await fetch(`/api/final-score/predictions?userId=${encodeURIComponent(user.id)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setPredictions(data.predictions ?? []);
+      } catch {
+        // Keep the locked UI usable even if the reveal table fails to load.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status?.locked, user.id]);
 
   if (!status || !status.enabled) {
     return null;
@@ -160,15 +198,47 @@ export function FinalScorePredictionSection({ user }: FinalScorePredictionSectio
       </form>
 
       {locked ? (
-        <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          <p className="font-semibold">Predictions locked</p>
-          {submitted ? (
-            <p className="mt-1">
-              Your prediction: {status.finalTeamA} {submitted.scoreTeamA} – {submitted.scoreTeamB}{' '}
-              {status.finalTeamB}
-            </p>
-          ) : (
-            <p className="mt-1">You did not submit a prediction.</p>
+        <div className="mt-4 space-y-3">
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            <p className="font-semibold">Predictions locked</p>
+            {submitted ? (
+              <p className="mt-1">
+                Your prediction: {status.finalTeamA} {submitted.scoreTeamA} – {submitted.scoreTeamB}{' '}
+                {status.finalTeamB}
+              </p>
+            ) : (
+              <p className="mt-1">You did not submit a prediction.</p>
+            )}
+          </div>
+
+          {predictions && (
+            <div className="overflow-x-auto rounded-xl bg-black/20 p-3">
+              <table className="w-full min-w-[240px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 text-white/50">
+                    <th className="py-2 pr-3 font-medium">User</th>
+                    <th className="py-2 font-medium">
+                      Prediction ({status.finalTeamA} – {status.finalTeamB})
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {predictions.map((row) => (
+                    <tr
+                      key={row.userId}
+                      className={`border-b border-white/5 ${row.userId === user.id ? 'text-gold-300' : 'text-white'}`}
+                    >
+                      <td className="py-2 pr-3 font-medium">{row.userName}</td>
+                      <td className="py-2 tabular-nums">
+                        {row.scoreTeamA !== null && row.scoreTeamB !== null
+                          ? `${row.scoreTeamA} – ${row.scoreTeamB}`
+                          : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       ) : (
