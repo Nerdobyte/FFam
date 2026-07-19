@@ -111,3 +111,37 @@ export async function saveFinalScorePrediction(
       { merge: true },
     );
 }
+
+export interface FinalScorePredictionEntry {
+  userId: string;
+  userName: string;
+  scoreTeamA: number;
+  scoreTeamB: number;
+}
+
+/** All final-score predictions joined with user names, sorted by name. */
+export async function listFinalScorePredictions(): Promise<FinalScorePredictionEntry[]> {
+  const db = getAdminDb();
+  const [predictionsSnap, usersSnap] = await Promise.all([
+    db.collection(PREDICTIONS_COLLECTION).get(),
+    db.collection('users').get(),
+  ]);
+
+  const userNames = new Map<string, string>();
+  for (const doc of usersSnap.docs) {
+    userNames.set(doc.id, (doc.data().name as string) ?? doc.id);
+  }
+
+  const entries: FinalScorePredictionEntry[] = predictionsSnap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      userId: doc.id,
+      userName: userNames.get(doc.id) ?? doc.id,
+      scoreTeamA: (data.scoreTeamA as number) ?? 0,
+      scoreTeamB: (data.scoreTeamB as number) ?? 0,
+    };
+  });
+
+  entries.sort((a, b) => a.userName.localeCompare(b.userName));
+  return entries;
+}

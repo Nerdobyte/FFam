@@ -16,6 +16,13 @@ interface FinalScoreStatus {
   finalTeamB: string;
 }
 
+interface PredictionRow {
+  userId: string;
+  userName: string;
+  scoreTeamA: number;
+  scoreTeamB: number;
+}
+
 export function FinalScorePredictionSection({ user }: FinalScorePredictionSectionProps) {
   const [status, setStatus] = useState<FinalScoreStatus | null>(null);
   const [scoreA, setScoreA] = useState('');
@@ -23,6 +30,7 @@ export function FinalScorePredictionSection({ user }: FinalScorePredictionSectio
   const [submitted, setSubmitted] = useState<{ scoreTeamA: number; scoreTeamB: number } | null>(
     null,
   );
+  const [allPredictions, setAllPredictions] = useState<PredictionRow[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -56,6 +64,42 @@ export function FinalScorePredictionSection({ user }: FinalScorePredictionSectio
     });
     return () => unsub();
   }, [user.id]);
+
+  useEffect(() => {
+    if (!status?.locked) {
+      setAllPredictions(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { auth } = await import('@/lib/firebase');
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) return;
+
+        const res = await fetch('/api/final-score/predictions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: user.id }),
+        });
+
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!cancelled) setAllPredictions(data.predictions ?? []);
+      } catch {
+        // Table stays empty if the reveal request fails.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status?.locked, user.id]);
 
   if (!status || !status.enabled) {
     return null;
@@ -160,15 +204,56 @@ export function FinalScorePredictionSection({ user }: FinalScorePredictionSectio
       </form>
 
       {locked ? (
-        <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          <p className="font-semibold">Predictions locked</p>
-          {submitted ? (
-            <p className="mt-1">
-              Your prediction: {status.finalTeamA} {submitted.scoreTeamA} – {submitted.scoreTeamB}{' '}
-              {status.finalTeamB}
-            </p>
+        <div className="mt-4 space-y-3">
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            <p className="font-semibold">Predictions locked</p>
+            {submitted ? (
+              <p className="mt-1">
+                Your prediction: {status.finalTeamA} {submitted.scoreTeamA} – {submitted.scoreTeamB}{' '}
+                {status.finalTeamB}
+              </p>
+            ) : (
+              <p className="mt-1">You did not submit a prediction.</p>
+            )}
+          </div>
+
+          {allPredictions === null ? (
+            <p className="text-sm text-white/50">Loading predictions…</p>
+          ) : allPredictions.length === 0 ? (
+            <p className="text-sm text-white/50">No predictions were submitted.</p>
           ) : (
-            <p className="mt-1">You did not submit a prediction.</p>
+            <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/20">
+              <table className="w-full min-w-[280px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 text-xs text-white/50">
+                    <th className="px-4 py-3 font-medium">Player</th>
+                    <th className="px-4 py-3 font-medium">
+                      {status.finalTeamA} – {status.finalTeamB}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allPredictions.map((row) => (
+                    <tr
+                      key={row.userId}
+                      className={`border-b border-white/5 last:border-0 ${
+                        row.userId === user.id ? 'bg-gold-500/10' : ''
+                      }`}
+                    >
+                      <td className="px-4 py-2.5 font-medium text-white">
+                        {row.userName}
+                        {row.userId === user.id ? (
+                          <span className="ml-2 text-xs font-normal text-gold-400">you</span>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-2.5 tabular-nums text-white/80">
+                        {row.scoreTeamA} – {row.scoreTeamB}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       ) : (
