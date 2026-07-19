@@ -94,6 +94,7 @@ export default function AdminPage() {
   const [finalScoreManualLocked, setFinalScoreManualLocked] = useState(false);
   const [finalTeamA, setFinalTeamA] = useState('Spain');
   const [finalTeamB, setFinalTeamB] = useState('Argentina');
+  const [tournamentWinner, setTournamentWinner] = useState('');
 
   const loadNationalityLock = async () => {
     const res = await fetch('/api/admin/nationality-lock');
@@ -155,6 +156,14 @@ export default function AdminPage() {
     return data;
   };
 
+  const loadTournamentWinner = async () => {
+    const res = await fetch('/api/admin/tournament-winner');
+    if (!res.ok) return null;
+    const data = await res.json();
+    setTournamentWinner(typeof data.winnerName === 'string' ? data.winnerName : '');
+    return data;
+  };
+
   const loadMatches = async () => {
     const res = await fetch('/api/admin/matches');
     if (!res.ok) {
@@ -192,6 +201,7 @@ export default function AdminPage() {
           loadUsers().catch(() => {});
           loadBonusAwards().catch(() => {});
           loadFinalScore().catch(() => {});
+          loadTournamentWinner().catch(() => {});
         }
       })
       .catch(() => {});
@@ -219,6 +229,7 @@ export default function AdminPage() {
       await loadUsers();
       await loadBonusAwards();
       await loadFinalScore();
+      await loadTournamentWinner();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -445,6 +456,31 @@ export default function AdminPage() {
     }
   };
 
+  const handleTournamentWinnerSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    try {
+      const res = await fetch('/api/admin/tournament-winner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ winnerName: tournamentWinner }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setTournamentWinner(data.winnerName ?? '');
+      setMessage(
+        data.winnerName
+          ? `Tournament winner set to ${data.winnerName}.`
+          : 'Tournament winner banner cleared.',
+      );
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFinalScoreSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!finalTeamA.trim() || !finalTeamB.trim()) {
@@ -552,6 +588,33 @@ export default function AdminPage() {
           {message}
         </p>
       )}
+
+      <section className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
+        <h2 className="text-lg font-semibold">Tournament winner</h2>
+        <p className="text-sm text-white/60">
+          Enter the family tournament winner name to show a banner at the top of the homepage. Clear
+          the field and save to hide it.
+        </p>
+        <form onSubmit={handleTournamentWinnerSave} className="space-y-3">
+          <label className="block text-sm text-white/70">
+            Winner name
+            <input
+              type="text"
+              value={tournamentWinner}
+              onChange={(e) => setTournamentWinner(e.target.value)}
+              placeholder="e.g. Bella"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-xl bg-gold-500 py-3 font-semibold text-pitch-950 disabled:opacity-60"
+          >
+            Save winner
+          </button>
+        </form>
+      </section>
 
       <section className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
         <h2 className="text-lg font-semibold">Create new match</h2>

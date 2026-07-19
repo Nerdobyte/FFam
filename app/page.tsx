@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Leaderboard } from '@/components/Leaderboard';
 import { ChooseNationSection } from '@/components/ChooseNationSection';
 import { FinalScorePredictionSection } from '@/components/FinalScorePredictionSection';
+import { TournamentWinnerBanner } from '@/components/TournamentWinnerBanner';
 import { UpcomingMatchesSection } from '@/components/UpcomingMatchesSection';
 import { ensureAnonymousAuth, logoutUser, rebindSession } from '@/lib/auth';
 import { subscribeMatches } from '@/lib/matches';
@@ -67,6 +68,8 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto min-h-screen max-w-6xl px-4 py-6">
+      <TournamentWinnerBanner />
+
       <header className="mb-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gold-500 text-xl">
